@@ -5,7 +5,7 @@ import { CSSExtractor } from './css/CSSExtractor.js';
 import { HeuristicsEngine } from './heuristics/HeuristicsEngine.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 
 // Middleware
 app.use(cors());

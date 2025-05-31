@@ -3,24 +3,22 @@ import * as cheerio from 'cheerio';
 
 export class DOMCapture {
   constructor() {
-    this.browser = null;
-  }
-
-  async initBrowser() {
-    if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-    }
-    return this.browser;
+    // No longer need to store browser instance
   }
 
   async capture(url) {
-    const browser = await this.initBrowser();
-    const page = await browser.newPage();
+    let browser = null;
+    let page = null;
 
     try {
+      // Create a fresh browser instance for each capture
+      browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      
+      page = await browser.newPage();
+
       // Set viewport for consistent rendering
       await page.setViewport({ width: 1920, height: 1080 });
 
@@ -31,7 +29,7 @@ export class DOMCapture {
       });
 
       // Wait for any dynamic content to load
-      await page.waitForTimeout(2000);
+      await page.waitForFunction(() => document.readyState === 'complete');
 
       // Extract DOM structure and element data
       const domData = await page.evaluate(() => {
@@ -125,7 +123,13 @@ export class DOMCapture {
       };
 
     } finally {
-      await page.close();
+      // Always close the page and browser
+      if (page) {
+        await page.close().catch(console.error);
+      }
+      if (browser) {
+        await browser.close().catch(console.error);
+      }
     }
   }
 
@@ -191,12 +195,5 @@ export class DOMCapture {
     });
 
     return structure;
-  }
-
-  async close() {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
-    }
   }
 } 
