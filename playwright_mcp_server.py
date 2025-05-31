@@ -1,226 +1,275 @@
 #!/usr/bin/env python3
 """
-Test script for Playwright MCP Server
+Playwright MCP Server
 
-Run this to verify the server works correctly.
+A Model Context Protocol server that provides web scraping capabilities using Playwright.
+Allows scraping websites, taking screenshots, and extracting DOM content.
 """
 
 import asyncio
+import base64
 import json
+import logging
 import sys
+from typing import Optional, Dict, Any
 from pathlib import Path
 
-# Add the server to path for testing
-sys.path.insert(0, str(Path(__file__).parent))
+import click
+from pydantic import BaseModel, Field
+from mcp.server.fastmcp import FastMCP
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
 
-try:
-    from playwright_mcp_server import scrape_website, ScrapingOptions
-    print("✅ Successfully imported Playwright MCP server")
-except ImportError as e:
-    print(f"❌ Failed to import server: {e}")
-    print("Make sure you've installed the requirements:")
-    print("pip install -r requirements.txt")
-    print("playwright install chromium")
-    sys.exit(1)
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize the MCP server with proper configuration
+mcp = FastMCP(
+    name="playwright-server",
+    instructions="A web scraping server using Playwright for browser automation. "
+                "Provides tools to scrape websites, take screenshots, and extract DOM content."
+)
 
 
-async def test_basic_scraping():
-    """Test basic website scraping functionality."""
+class ScrapeOptions(BaseModel):
+    """Options for scraping a website."""
+    screenshot: bool = Field(default=True, description="Whether to take a screenshot")
+    dom: bool = Field(default=True, description="Whether to extract DOM content")
+    full_page: bool = Field(default=True, description="Whether to capture full page screenshot")
+    viewport_width: int = Field(default=1920, description="Viewport width in pixels")
+    viewport_height: int = Field(default=1080, description="Viewport height in pixels")
+    timeout: int = Field(default=30000, description="Navigation timeout in milliseconds")
+    wait_until: str = Field(default="domcontentloaded", description="When to consider navigation succeeded")
+
+
+class ScrapeResult(BaseModel):
+    """Result of scraping a website."""
+    url: str = Field(description="The URL that was scraped")
+    title: Optional[str] = Field(default=None, description="Page title")
+    screenshot: Optional[str] = Field(default=None, description="Base64 encoded screenshot")
+    dom: Optional[str] = Field(default=None, description="DOM content as HTML")
+    error: Optional[str] = Field(default=None, description="Error message if scraping failed")
+    status: Optional[int] = Field(default=None, description="HTTP status code")
+
+
+@mcp.tool()
+async def scrape_website(
+    url: str = Field(description="URL of the website to scrape"),
+    options: Optional[Dict[str, Any]] = Field(default=None, description="Scraping options")
+) -> ScrapeResult:
+    """
+    Scrape a website using Playwright.
     
-    print("\n🧪 Testing basic scraping...")
+    Returns the page title, screenshot (base64 encoded), and DOM content.
+    Supports custom viewport sizes and various scraping options.
+    """
+    # Parse options
+    opts = ScrapeOptions(**(options or {}))
     
-    # Test with a simple, reliable website
-    test_url = "https://httpbin.org/html"
-    
+    browser = None
     try:
-        result = await scrape_website(test_url)
+        logger.info(f"Starting to scrape: {url}")
         
-        print(f"✅ Scraping successful: {result.success}")
-        print(f"📄 Page title: {result.page_title}")
-        print(f"📸 Screenshot captured: {bool(result.screenshot_base64)}")
-        print(f"🔍 DOM extracted: {bool(result.dom_content)}")
-        
-        if result.screenshot_base64:
-            print(f"📊 Screenshot size: {len(result.screenshot_base64)} characters")
-        
-        if result.dom_content:
-            print(f"📊 DOM size: {len(result.dom_content)} characters")
+        async with async_playwright() as p:
+            # Launch browser
+            browser = await p.chromium.launch(headless=True)
             
-        return True
-        
+            # Create context with custom viewport
+            context = await browser.new_context(
+                viewport={
+                    'width': opts.viewport_width,
+                    'height': opts.viewport_height
+                }
+            )
+            
+            # Create page
+            page = await context.new_page()
+            
+            # Navigate to URL
+            response = await page.goto(
+                url,
+                wait_until=opts.wait_until,
+                timeout=opts.timeout
+            )
+            
+            # Get status code
+            status = response.status if response else None
+            
+            # Check if page loaded successfully
+            if response and response.status >= 400:
+                raise Exception(f"HTTP {response.status} error")
+            
+            # Get page title
+            title = await page.title()
+            
+            # Take screenshot if requested
+            screenshot_b64 = None
+            if opts.screenshot:
+                screenshot_bytes = await page.screenshot(
+                    full_page=opts.full_page,
+                    type='png'
+                )
+                screenshot_b64 = base64.b64encode(screenshot_bytes).decode()
+                logger.info(f"Screenshot captured: {len(screenshot_b64)} characters")
+            
+            # Get DOM content if requested
+            dom_content = None
+            if opts.dom:
+                dom_content = await page.content()
+                logger.info(f"DOM extracted: {len(dom_content)} characters")
+            
+            # Close browser
+            await browser.close()
+            
+            logger.info(f"Successfully scraped: {url}")
+            
+            return ScrapeResult(
+                url=url,
+                title=title,
+                screenshot=screenshot_b64,
+                dom=dom_content,
+                status=status
+            )
+            
+    except PlaywrightTimeout:
+        logger.error(f"Timeout while scraping: {url}")
+        return ScrapeResult(
+            url=url,
+            error=f"Timeout: Page took too long to load (>{opts.timeout}ms)"
+        )
     except Exception as e:
-        print(f"❌ Test failed: {e}")
-        return False
+        logger.error(f"Error scraping {url}: {str(e)}")
+        return ScrapeResult(
+            url=url,
+            error=f"Error: {str(e)}"
+        )
+    finally:
+        if browser:
+            try:
+                await browser.close()
+            except:
+                pass
 
 
-async def test_screenshot_only():
-    """Test screenshot-only functionality."""
+@mcp.tool()
+async def scrape_url_simple(
+    url: str = Field(description="URL of the website to scrape")
+) -> ScrapeResult:
+    """
+    Simple website scraping with default options.
     
-    print("\n🧪 Testing screenshot-only mode...")
+    Takes a full-page screenshot and extracts the DOM content.
+    Uses default viewport size of 1920x1080.
+    """
+    return await scrape_website(url)
+
+
+@mcp.tool()
+async def take_screenshot(
+    url: str = Field(description="URL of the website to screenshot"),
+    full_page: bool = Field(default=True, description="Whether to capture the full page"),
+    width: int = Field(default=1920, description="Viewport width"),
+    height: int = Field(default=1080, description="Viewport height")
+) -> ScrapeResult:
+    """
+    Take a screenshot of a website without extracting DOM content.
     
-    options = ScrapingOptions(
-        extract_links=False,
-        extract_images=False,
-        extract_text_content=False
+    Useful for visual capture of web pages.
+    Returns only the screenshot as base64 encoded PNG.
+    """
+    options = {
+        "screenshot": True,
+        "dom": False,
+        "full_page": full_page,
+        "viewport_width": width,
+        "viewport_height": height
+    }
+    return await scrape_website(url, options)
+
+
+@mcp.tool()
+async def extract_page_content(
+    url: str = Field(description="URL of the website to extract content from")
+) -> ScrapeResult:
+    """
+    Extract DOM content from a website without taking a screenshot.
+    
+    Useful for text extraction and HTML analysis.
+    Returns the page title and full DOM content.
+    """
+    options = {
+        "screenshot": False,
+        "dom": True
+    }
+    return await scrape_website(url, options)
+
+
+@mcp.tool() 
+async def test_browser_connection() -> Dict[str, Any]:
+    """
+    Test if Playwright and browser are properly installed and working.
+    
+    Useful for debugging connection issues.
+    """
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            version = browser.version
+            await browser.close()
+            
+            return {
+                "status": "success",
+                "message": "Browser connection successful",
+                "browser_version": version
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Browser connection failed: {str(e)}",
+            "help": "Run 'playwright install chromium' to install the browser"
+        }
+
+
+# Main entry point
+@click.command()
+@click.option("--port", default=8000, help="Port to listen on for SSE")
+@click.option(
+    "--transport",
+    type=click.Choice(["stdio", "sse"]),
+    default="stdio",
+    help="Transport type",
+)
+@click.option("--log-level", default="INFO", help="Logging level")
+def main(port: int, transport: str, log_level: str) -> int:
+    """Run the Playwright MCP server."""
+    # Configure logging
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     
+    # Check if Playwright browsers are installed
     try:
-        result = await scrape_website("https://example.com", options)
-        
-        print(f"✅ Screenshot-only successful: {result.success}")
-        print(f"📸 Screenshot captured: {bool(result.screenshot_base64)}")
-        print(f"🔗 Links extracted: {bool(result.links)}")
-        print(f"🖼️ Images extracted: {bool(result.images)}")
-        
-        return True
-        
-    except Exception as e:
-        print(f"❌ Screenshot test failed: {e}")
-        return False
-
-
-async def test_error_handling():
-    """Test error handling with invalid URL."""
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, "-c", "from playwright.sync_api import sync_playwright; p = sync_playwright().start(); p.chromium.launch(headless=True).close(); p.stop()"],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            logger.warning("Playwright browsers may not be installed. Run 'playwright install chromium' to install.")
+    except:
+        pass
     
-    print("\n🧪 Testing error handling...")
+    logger.info(f"Starting Playwright MCP Server with {transport} transport...")
     
-    try:
-        result = await scrape_website("https://thisdomaindoesnotexist12345.com")
-        
-        print(f"✅ Error handling test completed")
-        print(f"❌ Expected failure: {not result.success}")
-        print(f"📝 Error message: {result.error_message}")
-        
-        return not result.success  # We expect this to fail
-        
-    except Exception as e:
-        print(f"✅ Exception properly caught: {e}")
-        return True
-
-
-async def test_custom_options():
-    """Test with custom scraping options."""
-    
-    print("\n🧪 Testing custom options...")
-    
-    options = ScrapingOptions(
-        viewport_width=800,
-        viewport_height=600,
-        timeout=10000,
-        full_page_screenshot=False,
-        extract_links=True,
-        extract_images=True
-    )
-    
-    try:
-        result = await scrape_website("https://httpbin.org/html", options)
-        
-        print(f"✅ Custom options test: {result.success}")
-        if result.page_size:
-            print(f"📏 Viewport used: {result.page_size.get('viewport_width')}x{result.page_size.get('viewport_height')}")
-        
-        return result.success
-        
-    except Exception as e:
-        print(f"❌ Custom options test failed: {e}")
-        return False
-
-
-async def save_test_screenshot():
-    """Save a test screenshot to verify output."""
-    
-    print("\n🧪 Saving test screenshot...")
-    
-    try:
-        result = await scrape_website("https://example.com")
-        
-        if result.success and result.screenshot_base64:
-            import base64
-            
-            # Save screenshot
-            screenshot_data = base64.b64decode(result.screenshot_base64)
-            test_file = Path("test_screenshot.png")
-            test_file.write_bytes(screenshot_data)
-            
-            print(f"✅ Screenshot saved to: {test_file.absolute()}")
-            print(f"📊 File size: {test_file.stat().st_size} bytes")
-            
-            return True
-        else:
-            print("❌ No screenshot data to save")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Failed to save screenshot: {e}")
-        return False
-
-
-async def main():
-    """Run all tests."""
-    
-    print("🚀 Starting Playwright MCP Server Tests")
-    print("="*50)
-    
-    tests = [
-        ("Basic Scraping", test_basic_scraping),
-        ("Screenshot Only", test_screenshot_only),
-        ("Error Handling", test_error_handling),
-        ("Custom Options", test_custom_options),
-        ("Save Screenshot", save_test_screenshot),
-    ]
-    
-    results = []
-    
-    for test_name, test_func in tests:
-        print(f"\n🔍 Running: {test_name}")
-        try:
-            success = await test_func()
-            results.append((test_name, success))
-            if success:
-                print(f"✅ {test_name}: PASSED")
-            else:
-                print(f"❌ {test_name}: FAILED")
-        except Exception as e:
-            print(f"💥 {test_name}: ERROR - {e}")
-            results.append((test_name, False))
-    
-    # Summary
-    print("\n" + "="*50)
-    print("📊 TEST RESULTS SUMMARY")
-    print("="*50)
-    
-    passed = sum(1 for _, success in results if success)
-    total = len(results)
-    
-    for test_name, success in results:
-        status = "✅ PASS" if success else "❌ FAIL"
-        print(f"{status} {test_name}")
-    
-    print(f"\n🏆 Final Score: {passed}/{total} tests passed")
-    
-    if passed == total:
-        print("🎉 All tests passed! The Playwright MCP server is working correctly.")
-        print("\nNext steps:")
-        print("1. Run the server: python playwright_mcp_server.py")
-        print("2. Connect with an MCP client")
-        print("3. Try: scrape_url_simple('https://example.com')")
+    # Run the server with the specified transport
+    if transport == "sse":
+        mcp.run(transport=transport, port=port)
     else:
-        print("⚠️ Some tests failed. Check the error messages above.")
-        print("\nTroubleshooting:")
-        print("1. Make sure Playwright is installed: pip install playwright")
-        print("2. Install browsers: playwright install chromium")
-        print("3. Check your internet connection")
-    
-    return passed == total
+        mcp.run(transport=transport)
+    return 0
 
 
 if __name__ == "__main__":
-    try:
-        success = asyncio.run(main())
-        sys.exit(0 if success else 1)
-    except KeyboardInterrupt:
-        print("\n🛑 Tests interrupted by user")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n💥 Test runner crashed: {e}")
-        sys.exit(1)
+    main()  # type: ignore[call-arg]
