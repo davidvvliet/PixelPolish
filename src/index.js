@@ -20,8 +20,15 @@ app.use(express.json());
 // Serve static files from public directory
 app.use('/public', serveStatic(path.join(__dirname, '../public')));
 
-// Serve local files for analysis
-app.use('/local', serveStatic(path.join(__dirname, '../local')));
+// Serve local files for analysis with no-cache headers
+app.use('/local', (req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  next();
+}, serveStatic(path.join(__dirname, '../local')));
 
 // Initialize components
 const domCapture = new DOMCapture();
@@ -83,8 +90,9 @@ app.post('/analyze-local', async (req, res) => {
       return res.status(400).json({ error: 'Filename is required' });
     }
 
-    // Construct local URL
-    const localUrl = `http://localhost:${PORT}/local/${filename}`;
+    // Construct local URL with timestamp to bypass cache
+    const timestamp = Date.now();
+    const localUrl = `http://localhost:${PORT}/local/${filename}?t=${timestamp}`;
     console.log(`Analyzing local file: ${filename} at ${localUrl}`);
 
     // Step 1: Capture DOM

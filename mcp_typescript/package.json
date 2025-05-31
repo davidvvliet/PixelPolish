@@ -1,0 +1,43 @@
+{
+  "name": "pixelpolish-mcp",
+  "version": "1.0.0",
+  "description": "PixelPolish MCP AI Agent - TypeScript implementation with Playwright screenshots and automated UI fixes",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "watcher": "npm run build && node dist/watcher.js",
+    "test": "npm run build && node dist/index.js --test"
+  },
+  "keywords": [
+    "mcp",
+    "ai",
+    "ui",
+    "screenshots",
+    "playwright",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "playwright": "^1.45.0",
+    "chokidar": "^3.5.3",
+    "openai": "^4.20.0",
+    "anthropic": "^0.24.0",
+    "node-fetch": "^3.3.2",
+    "sharp": "^0.33.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

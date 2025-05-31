@@ -19,6 +19,9 @@ export class DOMCapture {
       
       page = await browser.newPage();
 
+      // Disable cache to ensure fresh content
+      await page.setCacheEnabled(false);
+
       // Set viewport for consistent rendering
       await page.setViewport({ width: 1920, height: 1080 });
 
