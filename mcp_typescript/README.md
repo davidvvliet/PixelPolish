@@ -1,286 +1,118 @@
-# PixelPolish Comprehensive AI Agent
+# PixelPolish MCP Server
 
-**🤖 All-in-One AI-Powered UI Analysis and Automated Fixing System**
+**🤖 UI Analysis Tools for AI Assistants**
 
-A complete TypeScript solution that combines DOM analysis, CSS pattern extraction, heuristics scoring, screenshot capture, and AI visual assessment into a single powerful agent.
-
-## ✨ Features
-
-### 🔍 **Technical Analysis Engine**
-- **DOM Structure Analysis** - Puppeteer-based element extraction with computed styles
-- **CSS Pattern Detection** - Layout, spacing, typography, and color analysis
-- **190-Point Heuristics System** - 6 rule categories with comprehensive scoring:
-  - Alignment Rule (40 points)
-  - Spacing Consistency (35 points) 
-  - Typography Consistency (30 points)
-  - Accessibility Rule (35 points)
-  - Responsiveness Rule (25 points)
-  - Performance Rule (25 points)
-
-### 🤖 **AI Visual Assessment**
-- **Playwright Screenshots** - High-quality visual capture with cache-busting
-- **AI Vision Models** - Support for GPT-4 Vision and Claude Sonnet
-- **Smart Analysis** - Visual hierarchy, color harmony, layout balance assessment
-- **Priority Fix Generation** - Actionable CSS/HTML improvements
-
-### 🎯 **Comprehensive Integration**
-- **Combined Scoring** - Technical (60%) + Visual AI (40%) scores
-- **Express Server** - REST API with real-time dashboard
-- **File Monitoring** - Auto-analysis on HTML file changes
-- **Auto-Fix Capability** - Intelligent code improvement suggestions
+A comprehensive MCP (Model Context Protocol) server that provides UI analysis capabilities to AI assistants like Claude. Includes DOM analysis, CSS pattern extraction, 190-point heuristics scoring, screenshot capture, and AI visual assessment.
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js 18+
-- Optional: OpenAI or Anthropic API keys for AI analysis
-
-### Installation
 ```bash
-cd mcp_typescript
 npm install
 npx playwright install chromium
-```
-
-### Basic Usage
-```bash
-# Server mode (recommended)
+npm run build
 npm start
-
-# Server + file monitoring mode  
-npm start -- --monitor
-
-# With AI analysis
-OPENAI_API_KEY=your_key npm start
-
-# Enable auto-fixing
-npm start -- --auto-fix --ai-provider anthropic
 ```
 
-## 📊 Dashboard
+## 🔧 MCP Tools Available
 
-Access the comprehensive dashboard at: **http://localhost:3002**
+### `analyze_url`
+Comprehensive UI analysis including DOM structure, CSS patterns, heuristics scoring, screenshots, and AI visual assessment.
 
-The dashboard provides:
-- 🎯 **Combined Score Display** - Technical + AI visual assessment
-- 📸 **Screenshot Preview** - Visual state of analyzed pages
-- 🔧 **Priority AI Fixes** - Specific CSS/HTML improvements
-- 📊 **Rule Breakdown** - Detailed heuristics analysis
-- 🤖 **AI Assessment** - Visual quality evaluation
-- ⚡ **Real-time Updates** - Auto-refreshing analysis results
+**Parameters:**
+- `url` (required): URL to analyze
+- `include_screenshot` (optional): Whether to capture screenshot for AI analysis (default: true)
+- `ai_provider` (optional): 'openai' or 'anthropic' (default: 'openai')
 
-## 🛠️ API Endpoints
+### `capture_screenshot`
+Take high-quality screenshots of any URL using Playwright.
 
-### POST `/analyze`
-Comprehensive analysis of any URL
-```json
-{
-  "url": "https://example.com"
-}
-```
+**Parameters:**
+- `url` (required): URL to screenshot
+- `filename` (optional): Custom filename (default: 'screenshot')
 
-### POST `/analyze-local`
-Analyze local HTML files
-```json
-{
-  "filename": "landing-page.html"
-}
-```
+### `analyze_dom_structure`
+Extract and analyze DOM structure, including headings, navigation, forms, images, and links.
 
-### GET `/dashboard`
-Get latest analysis results (JSON)
+**Parameters:**
+- `url` (required): URL to analyze
 
-### GET `/health`
-Service health check with component status
+### `run_heuristics_analysis`
+Run comprehensive 190-point heuristics analysis across 6 rule categories.
 
-## 🎮 Command Line Options
-
-```bash
-# Modes
---server                    # Server mode only (default)
---monitor                   # Server + file monitoring
-
-# Configuration  
---port <port>               # Server port (default: 3002)
---local-dir <path>          # HTML files directory (default: ../local)
---ai-provider <provider>    # openai|anthropic (default: openai)
---auto-fix                  # Enable automated fixes (default: off)
---interval <ms>             # Watch interval (default: 3000ms)
-
-# Utilities
---test                      # Run system tests
---help                      # Show help
-```
+**Parameters:**
+- `url` (required): URL to analyze
 
 ## 🏗️ Architecture
 
-```
-PixelPolish Comprehensive AI Agent
-├── 🔍 DOM Capture Service (Puppeteer)
-├── 🎨 CSS Extractor Service  
-├── 📊 Heuristics Engine (190-point system)
-├── 📸 Screenshot Service (Playwright)
-├── 🤖 AI Analyzer (GPT-4V/Claude)
-├── 🖥️ Express Server (API + Dashboard)
-└── 👀 File Watcher (Real-time monitoring)
-```
-
 ### Core Services
+- **DOM Capture** - Puppeteer-based element extraction with computed styles
+- **CSS Extractor** - Layout, spacing, typography, and color analysis
+- **Heuristics Engine** - 190-point scoring system with 6 rule categories
+- **Screenshot Service** - Playwright visual capture with cache-busting
+- **AI Analyzer** - GPT-4V/Claude integration for visual assessment
 
-**DOM Capture** (`src/dom-capture.ts`)
-- Puppeteer-based page analysis
-- Element extraction with computed styles
-- Structural information parsing
+### 190-Point Heuristics System
+- **Alignment Rule** (40 points) - Grid-based alignment detection
+- **Spacing Consistency** (35 points) - Margin/padding pattern analysis
+- **Typography Consistency** (30 points) - Font usage and hierarchy
+- **Accessibility Rule** (35 points) - Alt text, heading hierarchy, structure
+- **Responsiveness Rule** (25 points) - Modern layout usage (Flexbox/Grid)
+- **Performance Rule** (25 points) - DOM complexity and optimization
 
-**CSS Extractor** (`src/css-extractor.ts`)  
-- Layout pattern analysis
-- Spacing and typography consistency
-- Color scheme extraction
+## 🎯 Usage with AI Assistants
 
-**Heuristics Engine** (`src/heuristics-engine.ts`)
-- 6 comprehensive rule categories
-- 190-point scoring system
-- Detailed issue reporting
+This MCP server is designed to be used by AI assistants. When connected, the assistant gains access to comprehensive UI analysis tools.
 
-**Screenshot Service** (`src/screenshot.ts`)
-- Playwright visual capture
-- Cache-busting capabilities
-- Multiple viewport support
-
-**AI Analyzer** (`src/analyzer.ts`)
-- Multi-provider support (OpenAI/Anthropic)
-- Visual assessment prompts
-- Priority fix generation
-
-**Express Server** (`src/server.ts`)
-- REST API endpoints
-- Real-time dashboard
-- Static file serving
-
-## 📈 Analysis Output
-
-### Technical Analysis
-- **Element Count** - DOM complexity assessment
-- **Rule Scores** - Individual heuristics performance
-- **Issue Categories** - Severity-based problem classification
-- **Recommendations** - Actionable improvement suggestions
-
-### AI Visual Analysis
-- **Overall Quality** - General design assessment
-- **Color Harmony** - Color scheme evaluation
-- **Layout Balance** - Visual hierarchy analysis
-- **Accessibility Score** - A11y compliance rating
-- **Priority Fixes** - AI-generated improvement actions
-
-### Combined Results
-```typescript
-{
-  success: true,
-  filename: "landing-page.html",
-  analyzedAt: "2024-05-31T21:15:30.123Z",
-  technical: { score: 32, scorePercentage: 32, issues: [...] },
-  visual: { visual_score: 68, priority_fixes: [...] },
-  screenshot: { screenshotBase64: "...", timestamp: 1685560530123 },
-  combined_score: 45, // 60% technical + 40% visual
-  priority_actions: [...] // Top 5 fixes
-}
-```
-
-## 🔧 Development
-
-### Build & Test
-```bash
-npm run build          # Compile TypeScript
-npm run dev            # Watch mode development
-npm run test           # Run system tests
-npm run clean          # Clean build artifacts
-```
-
-### Custom AI Prompts
-Modify `src/analyzer.ts` to customize AI analysis:
-
-```typescript
-private buildAnalysisPrompt(technicalScore: number, issuesCount: number): string {
-  return `Your custom analysis prompt focusing on specific design aspects...`;
-}
-```
-
-### Adding New Heuristics Rules
-Extend `src/heuristics-engine.ts`:
-
-```typescript
-class CustomRule extends BaseRule {
-  constructor() {
-    super('Custom Rule', 1.5);
-  }
-
-  async evaluate(domData: DOMData, cssData: CSSData): Promise<RuleResult> {
-    // Your custom rule logic
-  }
-}
-```
-
-## 🌟 Why This Architecture?
-
-### ✅ **Advantages of Unified System**
-- **Single Deployment** - One service handles everything
-- **Consistent Data Flow** - No inter-service communication overhead  
-- **Comprehensive Analysis** - Technical + visual assessment combined
-- **Real-time Processing** - Immediate results with live dashboard
-- **Simplified Maintenance** - Single codebase to manage
-
-### 🔄 **Compared to Split Architecture**
-| Feature | Unified Agent | Split System |
-|---------|---------------|--------------|
-| Setup Complexity | ✅ Simple | ❌ Complex |
-| Performance | ✅ Fast | ⚠️ Network overhead |
-| Data Consistency | ✅ Guaranteed | ⚠️ Sync issues |
-| Resource Usage | ✅ Efficient | ❌ Duplicate services |
-| Development | ✅ Streamlined | ❌ Multi-repo |
-
-## 📝 Example Workflow
-
-1. **File Monitoring** - Place HTML file in `local/` directory
-2. **Auto-Detection** - File watcher triggers analysis
-3. **DOM Capture** - Puppeteer extracts page structure
-4. **CSS Analysis** - Pattern detection and consistency checking
-5. **Technical Scoring** - 190-point heuristics evaluation
-6. **Screenshot Capture** - Playwright visual state capture
-7. **AI Assessment** - GPT-4V/Claude visual analysis
-8. **Fix Generation** - Priority improvement suggestions
-9. **Dashboard Update** - Real-time results display
-10. **Optional Auto-Fix** - Automated code improvements
+**Example workflow:**
+1. AI uses `analyze_url` tool to get complete analysis
+2. Receives technical scoring, visual assessment, and priority fixes
+3. Can drill down with specific tools like `run_heuristics_analysis`
+4. Screenshots captured automatically for visual context
 
 ## 🔐 Environment Variables
 
 ```bash
-# AI Analysis (optional)
+# For AI visual analysis (optional)
 OPENAI_API_KEY=sk-...           # For GPT-4 Vision
 ANTHROPIC_API_KEY=sk-ant-...    # For Claude Vision
-
-# Development
-NODE_ENV=development            # Enable debug logging
 ```
 
-## 🎯 Use Cases
+## 🛠️ Development
 
-- **Design System Audits** - Consistency checking across components
-- **Accessibility Reviews** - A11y compliance validation
-- **Performance Optimization** - DOM complexity analysis
-- **Visual QA** - AI-powered design quality assessment
-- **Automated Fixes** - Intelligent code improvements
-- **Real-time Monitoring** - Continuous design quality tracking
+```bash
+npm run dev       # Watch mode
+npm run build     # Compile TypeScript
+npm run clean     # Clean build artifacts
+```
 
-## 🚀 Next Steps
+## 📊 Analysis Output
 
-The comprehensive AI agent is ready for production use. Consider these enhancements:
+### Technical Analysis
+- DOM structure with element count and hierarchy
+- CSS pattern analysis (spacing, typography, colors)
+- 190-point heuristics scoring with rule breakdown
+- Issue classification by severity (critical, high, medium, low)
+- Actionable recommendations
 
-- **Multi-file Analysis** - Batch processing capabilities
-- **Custom Rule Engine** - User-defined heuristics
-- **Fix Automation** - Direct code modification
-- **Integration APIs** - CI/CD pipeline integration
-- **Advanced AI Models** - Specialized design assessment
+### AI Visual Assessment
+- Overall design quality evaluation
+- Color harmony and layout balance assessment
+- Typography consistency analysis
+- Accessibility scoring
+- Priority fix recommendations with specific CSS/HTML changes
+
+### Combined Scoring
+- Technical Score (60%) + Visual AI Score (40%)
+- Comprehensive issue summary
+- Priority action items
+
+## 🎉 Benefits
+
+- **For AI Assistants**: Provides deep UI analysis capabilities
+- **For Developers**: Get actionable feedback on design quality
+- **For Design Systems**: Automated consistency checking
+- **For Accessibility**: Built-in a11y compliance validation
 
 ---
 
-**🎉 You now have a complete, self-contained AI agent that provides comprehensive UI analysis and automated fixing capabilities!**
+**Ready to enhance your AI assistant with comprehensive UI analysis capabilities!**

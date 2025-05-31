@@ -99,8 +99,7 @@ export class ScreenshotService {
       // Take screenshot
       const screenshotBuffer = await page.screenshot({
         fullPage: true,
-        type: 'png',
-        quality: 90
+        type: 'png'
       });
 
       // Generate filename

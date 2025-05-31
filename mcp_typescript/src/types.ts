@@ -256,8 +256,9 @@ export interface ComprehensiveAnalysis {
 }
 
 export interface McpToolResult {
-  success: boolean;
-  data?: any;
-  error?: string;
-  message?: string;
+  content: Array<{
+    type: "text";
+    text: string;
+  }>;
+  isError?: boolean;
 } 
