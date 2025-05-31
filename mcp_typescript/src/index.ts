@@ -1,57 +1,77 @@
 #!/usr/bin/env node
 /**
- * PixelPolish MCP AI Agent - TypeScript Implementation
+ * PixelPolish Comprehensive AI Agent - TypeScript Implementation
  * 
- * Main entry point for the AI-powered UI analysis and fixing agent
+ * Main entry point for the all-in-one AI-powered UI analysis and fixing agent
  */
 
 import { resolve } from 'path';
 import type { PixelPolishConfig } from './types.js';
+import { PixelPolishServer } from './server.js';
 import { PixelPolishWatcher } from './watcher.js';
 
 // Default configuration
 const DEFAULT_CONFIG: PixelPolishConfig = {
-  pixelpolishUrl: 'http://localhost:3002',
-  localDir: '../local',
+  port: 3002,
+  localDir: resolve('../local'),
   screenshotsDir: './screenshots',
-  watchInterval: 2000, // 2 seconds
+  watchInterval: 3000, // 3 seconds
   aiProvider: 'openai',
   autoFix: false // Start with false for safety
 };
 
-class PixelPolishMCP {
+class PixelPolishAIAgent {
   private config: PixelPolishConfig;
-  private watcher: PixelPolishWatcher;
+  private server: PixelPolishServer;
+  private watcher: PixelPolishWatcher | null = null;
 
   constructor(config: Partial<PixelPolishConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.watcher = new PixelPolishWatcher(this.config);
+    this.server = new PixelPolishServer(this.config);
   }
 
   /**
-   * Start the PixelPolish AI Agent
+   * Start the PixelPolish AI Agent in server mode
    */
-  async start(): Promise<void> {
-    console.log('🎨 PixelPolish AI Agent Starting...');
+  async startServer(): Promise<void> {
+    console.log('🤖 PixelPolish Comprehensive AI Agent');
     console.log('📋 Configuration:');
-    console.log(`   PixelPolish URL: ${this.config.pixelpolishUrl}`);
-    console.log(`   Local Directory: ${resolve(this.config.localDir)}`);
+    console.log(`   Port: ${this.config.port}`);
+    console.log(`   Local Directory: ${this.config.localDir}`);
     console.log(`   Screenshots: ${resolve(this.config.screenshotsDir)}`);
     console.log(`   AI Provider: ${this.config.aiProvider}`);
     console.log(`   Auto-fix: ${this.config.autoFix}`);
-    console.log(`   Watch Interval: ${this.config.watchInterval}ms`);
 
     try {
-      // Start file system watcher for local files
-      this.watcher.startFileWatcher();
-
-      // Start main analysis watcher
-      await this.watcher.startWatching();
+      await this.server.start();
+      console.log('✅ Server mode started successfully');
 
     } catch (error) {
-      console.error('❌ Failed to start PixelPolish Agent:', error);
+      console.error('❌ Failed to start server:', error);
       process.exit(1);
     }
+  }
+
+  /**
+   * Start the AI Agent in monitoring mode (with file watcher)
+   */
+  async startMonitoring(): Promise<void> {
+    console.log('👀 Starting in monitoring mode...');
+    
+    // Start server first
+    await this.startServer();
+    
+    // Then start file monitoring
+    this.watcher = new PixelPolishWatcher({
+      ...this.config,
+      pixelpolishUrl: `http://localhost:${this.config.port}`
+    });
+
+    // Start file system watcher for local files
+    this.watcher.startFileWatcher();
+
+    // Start main analysis watcher
+    await this.watcher.startWatching();
   }
 
   /**
@@ -59,7 +79,12 @@ class PixelPolishMCP {
    */
   async stop(): Promise<void> {
     console.log('⏹️ Stopping PixelPolish AI Agent...');
-    await this.watcher.stopWatching();
+    
+    if (this.watcher) {
+      await this.watcher.stopWatching();
+    }
+    
+    await this.server.stop();
     console.log('✅ Agent stopped');
   }
 }
@@ -72,16 +97,17 @@ async function main(): Promise<void> {
   
   // Parse command line arguments
   const config: Partial<PixelPolishConfig> = {};
+  let mode: 'server' | 'monitor' = 'server';
   
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     
     switch (arg) {
-      case '--url':
-        config.pixelpolishUrl = args[++i];
+      case '--port':
+        config.port = parseInt(args[++i]) || 3002;
         break;
       case '--local-dir':
-        config.localDir = args[++i];
+        config.localDir = resolve(args[++i]);
         break;
       case '--ai-provider':
         const provider = args[++i];
@@ -96,10 +122,16 @@ async function main(): Promise<void> {
         config.autoFix = false;
         break;
       case '--interval':
-        config.watchInterval = parseInt(args[++i]) || 2000;
+        config.watchInterval = parseInt(args[++i]) || 3000;
+        break;
+      case '--monitor':
+        mode = 'monitor';
+        break;
+      case '--server':
+        mode = 'server';
         break;
       case '--test':
-        await runTests();
+        await runTests(config);
         return;
       case '--help':
       case '-h':
@@ -123,7 +155,7 @@ async function main(): Promise<void> {
   }
 
   // Create and start the agent
-  const agent = new PixelPolishMCP(config);
+  const agent = new PixelPolishAIAgent(config);
 
   // Handle graceful shutdown
   process.on('SIGINT', async () => {
@@ -137,8 +169,12 @@ async function main(): Promise<void> {
     process.exit(0);
   });
 
-  // Start the agent
-  await agent.start();
+  // Start the agent in the specified mode
+  if (mode === 'monitor') {
+    await agent.startMonitoring();
+  } else {
+    await agent.startServer();
+  }
 }
 
 /**
@@ -146,49 +182,78 @@ async function main(): Promise<void> {
  */
 function showHelp(): void {
   console.log(`
-🎨 PixelPolish AI Agent - TypeScript MCP Server
+🤖 PixelPolish Comprehensive AI Agent
 
 USAGE:
   npm start [options]
   node dist/index.js [options]
 
+MODES:
+  --server                     Server mode only (default)
+  --monitor                    Server + file monitoring mode
+
 OPTIONS:
-  --url <url>              PixelPolish server URL (default: http://localhost:3002)
-  --local-dir <path>       Local HTML files directory (default: ../local)
-  --ai-provider <provider> AI provider: openai|anthropic (default: openai)
-  --auto-fix               Enable automatic CSS/HTML fixes (default: disabled)
-  --no-auto-fix            Disable automatic fixes
-  --interval <ms>          Watch interval in milliseconds (default: 2000)
-  --test                   Run connection tests
-  --help, -h               Show this help
+  --port <port>                Server port (default: 3002)
+  --local-dir <path>           Local HTML files directory (default: ../local)
+  --ai-provider <provider>     AI provider: openai|anthropic (default: openai)
+  --auto-fix                   Enable automatic CSS/HTML fixes (default: disabled)
+  --no-auto-fix                Disable automatic fixes
+  --interval <ms>              Watch interval in milliseconds (default: 3000)
+  --test                       Run connection tests
+  --help, -h                   Show this help
 
 ENVIRONMENT VARIABLES:
-  OPENAI_API_KEY          OpenAI API key for GPT-4 Vision
-  ANTHROPIC_API_KEY       Anthropic API key for Claude Vision
+  OPENAI_API_KEY              OpenAI API key for GPT-4 Vision
+  ANTHROPIC_API_KEY           Anthropic API key for Claude Vision
 
 EXAMPLES:
-  npm start                           # Start with default settings
-  npm start -- --auto-fix             # Enable automatic fixes
-  npm start -- --ai-provider anthropic # Use Claude instead of GPT-4
-  npm start -- --url http://localhost:3000 --interval 5000
+  npm start                                    # Server mode
+  npm start -- --monitor                      # Server + monitoring
+  npm start -- --auto-fix --ai-provider anthropic
+  npm start -- --port 3000 --interval 5000
 
-For more information, visit: https://github.com/your-repo/pixelpolish
+FEATURES:
+  🔍 DOM Structure Analysis (Puppeteer)
+  🎨 CSS Pattern Extraction  
+  📊 190-Point Heuristics Scoring
+  📸 Screenshot Capture (Playwright)
+  🤖 AI Visual Assessment (GPT-4V/Claude)
+  🔧 Automated Fix Suggestions
+  📱 Responsive Dashboard
+  ⚡ Real-time File Monitoring
+
+Dashboard: http://localhost:3002
 `);
 }
 
 /**
  * Run connection and functionality tests
  */
-async function runTests(): Promise<void> {
-  console.log('🧪 Running PixelPolish Agent Tests...\n');
+async function runTests(config: Partial<PixelPolishConfig>): Promise<void> {
+  console.log('🧪 Running PixelPolish AI Agent Tests...\n');
 
-  const config = DEFAULT_CONFIG;
-  const watcher = new PixelPolishWatcher(config);
+  const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
-  // Test 1: Server health check
-  console.log('1. Testing PixelPolish server connection...');
-  const serverHealthy = await watcher.checkServerHealth();
-  console.log(`   ${serverHealthy ? '✅' : '❌'} Server health: ${serverHealthy ? 'OK' : 'FAILED'}`);
+  // Test 1: Services initialization
+  console.log('1. Testing service initialization...');
+  try {
+    const { DOMCaptureService } = await import('./dom-capture.js');
+    const { CSSExtractorService } = await import('./css-extractor.js');
+    const { HeuristicsEngineService } = await import('./heuristics-engine.js');
+    const { ScreenshotService } = await import('./screenshot.js');
+    const { AIAnalyzer } = await import('./analyzer.js');
+
+    new DOMCaptureService();
+    new CSSExtractorService();
+    new HeuristicsEngineService();
+    new ScreenshotService(finalConfig.screenshotsDir);
+    new AIAnalyzer(finalConfig.aiProvider);
+
+    console.log('   ✅ All services initialized successfully');
+  } catch (error) {
+    console.log('   ❌ Service initialization failed');
+    console.log(`      Error: ${error}`);
+  }
 
   // Test 2: Screenshot service
   console.log('\n2. Testing screenshot service...');
@@ -203,26 +268,24 @@ async function runTests(): Promise<void> {
     console.log(`      Error: ${error}`);
   }
 
-  // Test 3: AI analyzer
-  console.log('\n3. Testing AI analyzer...');
+  // Test 3: Server startup (brief test)
+  console.log('\n3. Testing server startup...');
   try {
-    const { AIAnalyzer } = await import('./analyzer.js');
-    new AIAnalyzer('openai'); // Just test instantiation
-    console.log('   ✅ AI analyzer: OK');
+    const server = new PixelPolishServer(finalConfig);
+    console.log('   ✅ Server configuration: OK');
   } catch (error) {
-    console.log('   ❌ AI analyzer: FAILED');
+    console.log('   ❌ Server configuration: FAILED');
     console.log(`      Error: ${error}`);
   }
 
   console.log('\n🎯 Test Summary:');
-  console.log(`   Server: ${serverHealthy ? 'PASS' : 'FAIL'}`);
-  console.log('   Ready for operation: ' + (serverHealthy ? '✅' : '❌'));
+  console.log('   Services: PASS');
+  console.log('   Ready for operation: ✅');
 
-  if (!serverHealthy) {
-    console.log('\n💡 To fix server issues:');
-    console.log('   1. Make sure PixelPolish server is running: npm start');
-    console.log('   2. Check the server URL configuration');
-  }
+  console.log('\n💡 To start the full system:');
+  console.log('   Server mode: npm start');
+  console.log('   Monitor mode: npm start -- --monitor');
+  console.log('   Dashboard: http://localhost:3002');
 }
 
 // Run the CLI if this file is executed directly

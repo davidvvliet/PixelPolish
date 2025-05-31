@@ -1,4 +1,19 @@
-export class HeuristicsEngine {
+/**
+ * Heuristics Engine for comprehensive UI analysis with 190-point scoring system
+ */
+
+import type { 
+  HeuristicsAnalysis, 
+  DOMData, 
+  CSSData, 
+  Issue, 
+  Recommendation, 
+  RuleResult 
+} from './types.js';
+
+export class HeuristicsEngineService {
+  private rules: BaseRule[];
+
   constructor() {
     this.rules = [
       new AlignmentRule(),
@@ -10,20 +25,38 @@ export class HeuristicsEngine {
     ];
   }
 
-  async analyze(domData, cssData) {
-    const analysis = {
+  /**
+   * Run comprehensive heuristics analysis
+   */
+  async analyze(domData: DOMData, cssData: CSSData): Promise<HeuristicsAnalysis> {
+    console.log('📊 Running heuristics analysis...');
+
+    const analysis: HeuristicsAnalysis = {
       score: 0,
-      maxScore: 100,
+      maxScore: 0,
+      scorePercentage: 0,
       issues: [],
       recommendations: [],
-      summary: {},
+      summary: {
+        totalIssues: 0,
+        severityCounts: {
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0
+        },
+        typeCounts: {},
+        topRecommendations: []
+      },
       ruleResults: []
     };
 
     // Run each heuristic rule
     for (const rule of this.rules) {
       try {
+        console.log(`  Running ${rule.name}...`);
         const result = await rule.evaluate(domData, cssData);
+        
         analysis.ruleResults.push({
           ruleName: rule.name,
           score: result.score,
@@ -43,7 +76,8 @@ export class HeuristicsEngine {
         analysis.issues.push({
           type: 'system_error',
           severity: 'low',
-          message: `Failed to run ${rule.name} rule: ${error.message}`
+          message: `Failed to run ${rule.name} rule: ${error}`,
+          suggestion: 'Check system configuration'
         });
       }
     }
@@ -55,10 +89,15 @@ export class HeuristicsEngine {
     // Generate summary
     analysis.summary = this.generateSummary(analysis);
 
+    console.log(`✅ Analysis complete: ${analysis.scorePercentage}% (${analysis.issues.length} issues)`);
+    
     return analysis;
   }
 
-  generateSummary(analysis) {
+  /**
+   * Generate analysis summary
+   */
+  private generateSummary(analysis: HeuristicsAnalysis) {
     const severityCounts = {
       critical: 0,
       high: 0,
@@ -66,7 +105,7 @@ export class HeuristicsEngine {
       low: 0
     };
 
-    const typeCounts = {};
+    const typeCounts: Record<string, number> = {};
 
     analysis.issues.forEach(issue => {
       severityCounts[issue.severity]++;
@@ -85,15 +124,16 @@ export class HeuristicsEngine {
 }
 
 // Base rule class
-class BaseRule {
-  constructor(name, weight = 1) {
+abstract class BaseRule {
+  public name: string;
+  public weight: number;
+
+  constructor(name: string, weight: number = 1) {
     this.name = name;
     this.weight = weight;
   }
 
-  async evaluate(domData, cssData) {
-    throw new Error('evaluate method must be implemented by subclass');
-  }
+  abstract evaluate(domData: DOMData, cssData: CSSData): Promise<RuleResult>;
 }
 
 // Alignment detection rule
@@ -102,10 +142,11 @@ class AlignmentRule extends BaseRule {
     super('Alignment Rule', 2);
   }
 
-  async evaluate(domData, cssData) {
-    const result = {
+  async evaluate(domData: DOMData, cssData: CSSData): Promise<RuleResult> {
+    const result: RuleResult = {
+      ruleName: this.name,
       score: 0,
-      maxScore: 20,
+      maxScore: 40,
       issues: [],
       recommendations: []
     };
@@ -127,7 +168,7 @@ class AlignmentRule extends BaseRule {
 
     // Calculate score based on issues found
     const totalIssues = result.issues.length;
-    result.score = Math.max(0, result.maxScore - (totalIssues * 2));
+    result.score = Math.max(0, result.maxScore - (totalIssues * 3));
 
     if (totalIssues > 0) {
       result.recommendations.push({
@@ -141,12 +182,12 @@ class AlignmentRule extends BaseRule {
     return result;
   }
 
-  detectAlignmentGrid(elements) {
+  private detectAlignmentGrid(elements: any[]) {
     const grid = {
-      horizontalLines: new Set(),
-      verticalLines: new Set(),
-      commonWidths: new Map(),
-      commonHeights: new Map()
+      horizontalLines: new Set<number>(),
+      verticalLines: new Set<number>(),
+      commonWidths: new Map<number, number>(),
+      commonHeights: new Map<number, number>()
     };
 
     elements.forEach(element => {
@@ -166,8 +207,8 @@ class AlignmentRule extends BaseRule {
     return grid;
   }
 
-  checkHorizontalAlignment(elements, grid) {
-    const issues = [];
+  private checkHorizontalAlignment(elements: any[], grid: any): Issue[] {
+    const issues: Issue[] = [];
     const tolerance = 5; // pixels
 
     elements.forEach((element, index) => {
@@ -196,8 +237,8 @@ class AlignmentRule extends BaseRule {
     return issues;
   }
 
-  checkVerticalAlignment(elements, grid) {
-    const issues = [];
+  private checkVerticalAlignment(elements: any[], grid: any): Issue[] {
+    const issues: Issue[] = [];
     const tolerance = 5; // pixels
 
     elements.forEach((element, index) => {
@@ -212,7 +253,7 @@ class AlignmentRule extends BaseRule {
         }
       }
 
-      if (!alignedToGrid && rect.height > 20) { // Only check meaningful elements
+      if (!alignedToGrid && rect.height > 30) { // Only check meaningful elements
         issues.push({
           type: 'misalignment',
           severity: 'medium',
@@ -226,9 +267,9 @@ class AlignmentRule extends BaseRule {
     return issues;
   }
 
-  checkTextAlignment(elements) {
-    const issues = [];
-    const textAlignments = new Map();
+  private checkTextAlignment(elements: any[]): Issue[] {
+    const issues: Issue[] = [];
+    const textAlignments = new Map<string, number>();
 
     elements.forEach((element, index) => {
       if (element.textContent && element.computedStyles.textAlign) {
@@ -237,13 +278,13 @@ class AlignmentRule extends BaseRule {
       }
     });
 
-    // If too many different text alignments, suggest consistency
+    // Check for too many different alignments
     if (textAlignments.size > 3) {
       issues.push({
         type: 'text_alignment_inconsistency',
         severity: 'low',
-        message: `Found ${textAlignments.size} different text alignments. Consider standardizing.`,
-        suggestion: 'Use consistent text alignment throughout the page'
+        message: `Found ${textAlignments.size} different text alignments, consider standardizing`,
+        suggestion: 'Limit text alignment variations to improve consistency'
       });
     }
 
@@ -254,115 +295,109 @@ class AlignmentRule extends BaseRule {
 // Spacing consistency rule
 class SpacingConsistencyRule extends BaseRule {
   constructor() {
-    super('Spacing Consistency Rule', 1.5);
+    super('Spacing Consistency Rule', 2);
   }
 
-  async evaluate(domData, cssData) {
-    const result = {
+  async evaluate(domData: DOMData, cssData: CSSData): Promise<RuleResult> {
+    const result: RuleResult = {
+      ruleName: this.name,
       score: 0,
-      maxScore: 15,
+      maxScore: 35,
       issues: [],
       recommendations: []
     };
 
-    // Analyze spacing patterns from CSS data
-    const spacingIssues = this.analyzeSpacingPatterns(cssData.spacing);
-    result.issues.push(...spacingIssues);
-
-    // Check for spacing inconsistencies
-    const inconsistencyIssues = this.checkSpacingInconsistencies(cssData.spacing);
+    const spacingData = cssData.spacing;
+    
+    // Analyze spacing patterns
+    const patterns = this.analyzeSpacingPatterns(spacingData);
+    
+    // Check for inconsistencies
+    const inconsistencyIssues = this.checkSpacingInconsistencies(spacingData);
     result.issues.push(...inconsistencyIssues);
 
     // Calculate score
     const totalIssues = result.issues.length;
-    result.score = Math.max(0, result.maxScore - (totalIssues * 1.5));
+    result.score = Math.max(0, result.maxScore - (totalIssues * 2));
 
-    if (totalIssues > 0) {
+    if (totalIssues > 5) {
       result.recommendations.push({
         type: 'spacing',
         priority: 7,
-        message: 'Consider using a consistent spacing system (e.g., 8px, 16px, 24px multiples)',
-        action: 'Implement a spacing scale for consistent margins and padding'
+        message: 'Significant spacing inconsistencies detected. Consider using a spacing scale system.',
+        action: 'Implement consistent spacing using CSS custom properties or a design system'
       });
     }
 
     return result;
   }
 
-  analyzeSpacingPatterns(spacingData) {
-    const issues = [];
-    
-    // Check if there are too many unique spacing values
-    if (spacingData.marginPatterns.size > 10) {
-      issues.push({
-        type: 'spacing_variety',
-        severity: 'medium',
-        message: `Found ${spacingData.marginPatterns.size} different margin patterns. Consider standardizing.`,
-        suggestion: 'Use a limited set of margin values based on a spacing scale'
-      });
-    }
+  private analyzeSpacingPatterns(spacingData: any) {
+    // Implementation for spacing pattern analysis
+    return {
+      marginPatterns: spacingData.marginPatterns?.size || 0,
+      paddingPatterns: spacingData.paddingPatterns?.size || 0
+    };
+  }
 
-    if (spacingData.paddingPatterns.size > 8) {
-      issues.push({
-        type: 'spacing_variety',
-        severity: 'medium',
-        message: `Found ${spacingData.paddingPatterns.size} different padding patterns. Consider standardizing.`,
-        suggestion: 'Use a limited set of padding values based on a spacing scale'
+  private checkSpacingInconsistencies(spacingData: any): Issue[] {
+    const issues: Issue[] = [];
+    
+    if (spacingData.inconsistencies) {
+      spacingData.inconsistencies.forEach((inconsistency: any) => {
+        issues.push({
+          type: 'spacing_inconsistency',
+          severity: 'medium',
+          elementIndex: inconsistency.elementIndex,
+          message: inconsistency.issue,
+          suggestion: `Standardize ${inconsistency.type} values for better consistency`
+        });
       });
     }
 
     return issues;
-  }
-
-  checkSpacingInconsistencies(spacingData) {
-    return spacingData.inconsistencies.map(inconsistency => ({
-      type: 'spacing_inconsistency',
-      severity: 'low',
-      elementIndex: inconsistency.elementIndex,
-      message: inconsistency.issue,
-      suggestion: `Consider using symmetric ${inconsistency.type} values`
-    }));
   }
 }
 
 // Typography consistency rule
 class TypographyConsistencyRule extends BaseRule {
   constructor() {
-    super('Typography Consistency Rule', 1);
+    super('Typography Consistency Rule', 2);
   }
 
-  async evaluate(domData, cssData) {
-    const result = {
+  async evaluate(domData: DOMData, cssData: CSSData): Promise<RuleResult> {
+    const result: RuleResult = {
+      ruleName: this.name,
       score: 0,
-      maxScore: 10,
+      maxScore: 30,
       issues: [],
       recommendations: []
     };
 
     const typography = cssData.typography;
-
-    // Check font size variety
+    
+    // Check font size consistency
     if (typography.fontSizes.size > 8) {
       result.issues.push({
-        type: 'font_size_variety',
+        type: 'typography_inconsistency',
         severity: 'medium',
-        message: `Found ${typography.fontSizes.size} different font sizes. Consider using a type scale.`,
-        suggestion: 'Use a consistent typographic scale (e.g., 1.2x ratio)'
+        message: `Too many font sizes (${typography.fontSizes.size}). Consider using a typographic scale.`,
+        suggestion: 'Limit font sizes to 6-8 variations using a consistent scale'
       });
     }
 
     // Check font family consistency
     if (typography.fontFamilies.size > 3) {
       result.issues.push({
-        type: 'font_family_variety',
+        type: 'typography_inconsistency',
         severity: 'high',
-        message: `Found ${typography.fontFamilies.size} different font families. Limit to 2-3 fonts.`,
-        suggestion: 'Use a maximum of 2-3 font families for consistency'
+        message: `Too many font families (${typography.fontFamilies.size}). Limit to 2-3 families maximum.`,
+        suggestion: 'Use a consistent font family system'
       });
     }
 
-    // Calculate score
-    result.score = Math.max(0, result.maxScore - (result.issues.length * 2));
+    const totalIssues = result.issues.length;
+    result.score = Math.max(0, result.maxScore - (totalIssues * 5));
 
     return result;
   }
@@ -374,34 +409,29 @@ class ResponsivenessRule extends BaseRule {
     super('Responsiveness Rule', 1.5);
   }
 
-  async evaluate(domData, cssData) {
-    const result = {
+  async evaluate(domData: DOMData, cssData: CSSData): Promise<RuleResult> {
+    const result: RuleResult = {
+      ruleName: this.name,
       score: 0,
-      maxScore: 15,
+      maxScore: 25,
       issues: [],
       recommendations: []
     };
 
     const responsiveness = cssData.responsiveness;
-
-    // Check for fixed width elements
-    responsiveness.fixedWidthElements.forEach(element => {
-      result.issues.push({
-        type: 'fixed_width',
-        severity: 'medium',
-        elementIndex: element.elementIndex,
-        message: `Element has fixed width (${element.width}) which may not be responsive`,
-        suggestion: element.recommendation
-      });
-    });
-
-    // Score based on responsive layout usage
-    const totalElements = domData.elements.length;
-    const flexElements = responsiveness.flexElements.length;
-    const gridElements = responsiveness.gridElements.length;
     
-    const responsiveScore = ((flexElements + gridElements) / totalElements) * result.maxScore;
-    result.score = Math.min(result.maxScore, responsiveScore);
+    // Check for modern layout usage
+    if (responsiveness.flexboxUsage === 0 && responsiveness.gridUsage === 0) {
+      result.issues.push({
+        type: 'responsiveness',
+        severity: 'high',
+        message: 'No modern layout systems (Flexbox/Grid) detected',
+        suggestion: 'Use Flexbox or CSS Grid for responsive layouts'
+      });
+    }
+
+    const totalIssues = result.issues.length;
+    result.score = Math.max(0, result.maxScore - (totalIssues * 8));
 
     return result;
   }
@@ -413,41 +443,31 @@ class AccessibilityRule extends BaseRule {
     super('Accessibility Rule', 2);
   }
 
-  async evaluate(domData, cssData) {
-    const result = {
+  async evaluate(domData: DOMData, cssData: CSSData): Promise<RuleResult> {
+    const result: RuleResult = {
+      ruleName: this.name,
       score: 0,
-      maxScore: 20,
+      maxScore: 35,
       issues: [],
       recommendations: []
     };
 
-    // Check for images without alt text
-    domData.structure.images.forEach((image, index) => {
-      if (!image.alt || image.alt.trim() === '') {
-        result.issues.push({
-          type: 'missing_alt_text',
-          severity: 'high',
-          message: 'Image missing alt text',
-          suggestion: 'Add descriptive alt text to images for screen readers'
-        });
-      }
-    });
-
     // Check heading hierarchy
-    const headings = domData.structure.headings;
-    if (headings.length > 0) {
-      const hierarchyIssues = this.checkHeadingHierarchy(headings);
-      result.issues.push(...hierarchyIssues);
-    }
+    const headingIssues = this.checkHeadingHierarchy(domData.structure.headings);
+    result.issues.push(...headingIssues);
 
-    // Calculate score
-    result.score = Math.max(0, result.maxScore - (result.issues.length * 3));
+    // Check image alt attributes
+    const imageIssues = this.checkImageAccessibility(domData.structure.images);
+    result.issues.push(...imageIssues);
+
+    const totalIssues = result.issues.length;
+    result.score = Math.max(0, result.maxScore - (totalIssues * 4));
 
     return result;
   }
 
-  checkHeadingHierarchy(headings) {
-    const issues = [];
+  private checkHeadingHierarchy(headings: any[]): Issue[] {
+    const issues: Issue[] = [];
     
     for (let i = 1; i < headings.length; i++) {
       const current = headings[i];
@@ -455,13 +475,30 @@ class AccessibilityRule extends BaseRule {
       
       if (current.level > previous.level + 1) {
         issues.push({
-          type: 'heading_hierarchy',
+          type: 'accessibility',
           severity: 'medium',
-          message: `Heading level jumps from h${previous.level} to h${current.level}`,
-          suggestion: 'Use sequential heading levels for proper document outline'
+          message: `Heading hierarchy skips levels (h${previous.level} to h${current.level})`,
+          suggestion: 'Maintain proper heading hierarchy for screen readers'
         });
       }
     }
+
+    return issues;
+  }
+
+  private checkImageAccessibility(images: any[]): Issue[] {
+    const issues: Issue[] = [];
+    
+    images.forEach((image, index) => {
+      if (!image.alt) {
+        issues.push({
+          type: 'accessibility',
+          severity: 'high',
+          message: `Image missing alt attribute`,
+          suggestion: 'Add descriptive alt text for screen readers'
+        });
+      }
+    });
 
     return issues;
   }
@@ -473,37 +510,27 @@ class PerformanceRule extends BaseRule {
     super('Performance Rule', 1);
   }
 
-  async evaluate(domData, cssData) {
-    const result = {
+  async evaluate(domData: DOMData, cssData: CSSData): Promise<RuleResult> {
+    const result: RuleResult = {
+      ruleName: this.name,
       score: 0,
-      maxScore: 10,
+      maxScore: 25,
       issues: [],
       recommendations: []
     };
 
-    // Check for excessive DOM elements
-    if (domData.totalElements > 1000) {
+    // Check DOM complexity
+    if (domData.totalElements > 500) {
       result.issues.push({
-        type: 'excessive_dom',
+        type: 'performance',
         severity: 'medium',
-        message: `Page has ${domData.totalElements} DOM elements. Consider simplifying.`,
-        suggestion: 'Reduce DOM complexity for better performance'
+        message: `High DOM complexity (${domData.totalElements} elements)`,
+        suggestion: 'Consider reducing DOM complexity for better performance'
       });
     }
 
-    // Check for overlapping elements (potential layout issues)
-    const overlaps = cssData.positioning.overlaps;
-    if (overlaps.length > 0) {
-      result.issues.push({
-        type: 'overlapping_elements',
-        severity: 'high',
-        message: `Found ${overlaps.length} overlapping elements`,
-        suggestion: 'Fix overlapping elements to prevent layout issues'
-      });
-    }
-
-    // Calculate score
-    result.score = Math.max(0, result.maxScore - (result.issues.length * 2));
+    const totalIssues = result.issues.length;
+    result.score = Math.max(0, result.maxScore - (totalIssues * 5));
 
     return result;
   }

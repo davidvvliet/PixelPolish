@@ -1,191 +1,286 @@
-# PixelPolish AI Agent - TypeScript MCP
+# PixelPolish Comprehensive AI Agent
 
-A TypeScript-based AI agent that automatically analyzes and fixes UI issues using Playwright screenshots and AI vision models.
+**🤖 All-in-One AI-Powered UI Analysis and Automated Fixing System**
 
-## Features
+A complete TypeScript solution that combines DOM analysis, CSS pattern extraction, heuristics scoring, screenshot capture, and AI visual assessment into a single powerful agent.
 
-- 🎨 **Real-time UI monitoring** - Watches localhost:3002 for changes
-- 📸 **Playwright screenshots** - Captures visual state of web pages  
-- 🤖 **AI-powered analysis** - Uses GPT-4 Vision or Claude for visual assessment
-- 🔧 **Automated fixes** - Suggests and applies CSS/HTML improvements
-- 👀 **File watching** - Monitors local HTML files for changes
-- 📊 **Comprehensive reporting** - Detailed analysis and recommendations
+## ✨ Features
 
-## Quick Start
+### 🔍 **Technical Analysis Engine**
+- **DOM Structure Analysis** - Puppeteer-based element extraction with computed styles
+- **CSS Pattern Detection** - Layout, spacing, typography, and color analysis
+- **190-Point Heuristics System** - 6 rule categories with comprehensive scoring:
+  - Alignment Rule (40 points)
+  - Spacing Consistency (35 points) 
+  - Typography Consistency (30 points)
+  - Accessibility Rule (35 points)
+  - Responsiveness Rule (25 points)
+  - Performance Rule (25 points)
+
+### 🤖 **AI Visual Assessment**
+- **Playwright Screenshots** - High-quality visual capture with cache-busting
+- **AI Vision Models** - Support for GPT-4 Vision and Claude Sonnet
+- **Smart Analysis** - Visual hierarchy, color harmony, layout balance assessment
+- **Priority Fix Generation** - Actionable CSS/HTML improvements
+
+### 🎯 **Comprehensive Integration**
+- **Combined Scoring** - Technical (60%) + Visual AI (40%) scores
+- **Express Server** - REST API with real-time dashboard
+- **File Monitoring** - Auto-analysis on HTML file changes
+- **Auto-Fix Capability** - Intelligent code improvement suggestions
+
+## 🚀 Quick Start
 
 ### Prerequisites
-
 - Node.js 18+
-- Running PixelPolish server on localhost:3002
+- Optional: OpenAI or Anthropic API keys for AI analysis
 
 ### Installation
-
 ```bash
 cd mcp_typescript
 npm install
 npx playwright install chromium
 ```
 
-### Environment Setup
-
-Create a `.env` file (optional):
-
+### Basic Usage
 ```bash
-# For AI analysis (choose one)
-OPENAI_API_KEY=your_openai_api_key_here
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-```
-
-### Usage
-
-```bash
-# Basic usage (mock AI analysis)
+# Server mode (recommended)
 npm start
+
+# Server + file monitoring mode  
+npm start -- --monitor
 
 # With AI analysis
 OPENAI_API_KEY=your_key npm start
 
 # Enable auto-fixing
-npm start -- --auto-fix
-
-# Use Claude instead of GPT-4
-npm start -- --ai-provider anthropic
-
-# Custom configuration
-npm start -- --url http://localhost:3000 --interval 5000
+npm start -- --auto-fix --ai-provider anthropic
 ```
 
-## Commands
+## 📊 Dashboard
 
-### Development
+Access the comprehensive dashboard at: **http://localhost:3002**
+
+The dashboard provides:
+- 🎯 **Combined Score Display** - Technical + AI visual assessment
+- 📸 **Screenshot Preview** - Visual state of analyzed pages
+- 🔧 **Priority AI Fixes** - Specific CSS/HTML improvements
+- 📊 **Rule Breakdown** - Detailed heuristics analysis
+- 🤖 **AI Assessment** - Visual quality evaluation
+- ⚡ **Real-time Updates** - Auto-refreshing analysis results
+
+## 🛠️ API Endpoints
+
+### POST `/analyze`
+Comprehensive analysis of any URL
+```json
+{
+  "url": "https://example.com"
+}
+```
+
+### POST `/analyze-local`
+Analyze local HTML files
+```json
+{
+  "filename": "landing-page.html"
+}
+```
+
+### GET `/dashboard`
+Get latest analysis results (JSON)
+
+### GET `/health`
+Service health check with component status
+
+## 🎮 Command Line Options
 
 ```bash
-npm run dev          # Watch mode with hot reload
-npm run build        # Build TypeScript to JavaScript
-npm run test         # Run connection tests
+# Modes
+--server                    # Server mode only (default)
+--monitor                   # Server + file monitoring
+
+# Configuration  
+--port <port>               # Server port (default: 3002)
+--local-dir <path>          # HTML files directory (default: ../local)
+--ai-provider <provider>    # openai|anthropic (default: openai)
+--auto-fix                  # Enable automated fixes (default: off)
+--interval <ms>             # Watch interval (default: 3000ms)
+
+# Utilities
+--test                      # Run system tests
+--help                      # Show help
 ```
 
-### Options
+## 🏗️ Architecture
 
+```
+PixelPolish Comprehensive AI Agent
+├── 🔍 DOM Capture Service (Puppeteer)
+├── 🎨 CSS Extractor Service  
+├── 📊 Heuristics Engine (190-point system)
+├── 📸 Screenshot Service (Playwright)
+├── 🤖 AI Analyzer (GPT-4V/Claude)
+├── 🖥️ Express Server (API + Dashboard)
+└── 👀 File Watcher (Real-time monitoring)
+```
+
+### Core Services
+
+**DOM Capture** (`src/dom-capture.ts`)
+- Puppeteer-based page analysis
+- Element extraction with computed styles
+- Structural information parsing
+
+**CSS Extractor** (`src/css-extractor.ts`)  
+- Layout pattern analysis
+- Spacing and typography consistency
+- Color scheme extraction
+
+**Heuristics Engine** (`src/heuristics-engine.ts`)
+- 6 comprehensive rule categories
+- 190-point scoring system
+- Detailed issue reporting
+
+**Screenshot Service** (`src/screenshot.ts`)
+- Playwright visual capture
+- Cache-busting capabilities
+- Multiple viewport support
+
+**AI Analyzer** (`src/analyzer.ts`)
+- Multi-provider support (OpenAI/Anthropic)
+- Visual assessment prompts
+- Priority fix generation
+
+**Express Server** (`src/server.ts`)
+- REST API endpoints
+- Real-time dashboard
+- Static file serving
+
+## 📈 Analysis Output
+
+### Technical Analysis
+- **Element Count** - DOM complexity assessment
+- **Rule Scores** - Individual heuristics performance
+- **Issue Categories** - Severity-based problem classification
+- **Recommendations** - Actionable improvement suggestions
+
+### AI Visual Analysis
+- **Overall Quality** - General design assessment
+- **Color Harmony** - Color scheme evaluation
+- **Layout Balance** - Visual hierarchy analysis
+- **Accessibility Score** - A11y compliance rating
+- **Priority Fixes** - AI-generated improvement actions
+
+### Combined Results
+```typescript
+{
+  success: true,
+  filename: "landing-page.html",
+  analyzedAt: "2024-05-31T21:15:30.123Z",
+  technical: { score: 32, scorePercentage: 32, issues: [...] },
+  visual: { visual_score: 68, priority_fixes: [...] },
+  screenshot: { screenshotBase64: "...", timestamp: 1685560530123 },
+  combined_score: 45, // 60% technical + 40% visual
+  priority_actions: [...] // Top 5 fixes
+}
+```
+
+## 🔧 Development
+
+### Build & Test
 ```bash
---url <url>              PixelPolish server URL (default: http://localhost:3002)
---local-dir <path>       Local HTML files directory (default: ../local)
---ai-provider <provider> AI provider: openai|anthropic (default: openai)
---auto-fix               Enable automatic CSS/HTML fixes (default: disabled)
---interval <ms>          Watch interval in milliseconds (default: 2000)
---test                   Run connection tests
---help                   Show help
+npm run build          # Compile TypeScript
+npm run dev            # Watch mode development
+npm run test           # Run system tests
+npm run clean          # Clean build artifacts
 ```
 
-## How It Works
-
-1. **File Watcher**: Monitors the local HTML directory for changes
-2. **Server Monitor**: Polls PixelPolish server for new analysis results
-3. **Screenshot Capture**: Takes Playwright screenshots of analyzed pages
-4. **AI Analysis**: Sends screenshots to AI models for visual assessment
-5. **Fix Application**: Suggests and optionally applies automated fixes
-
-## AI Analysis
-
-The AI provides:
-
-- **Visual Assessment**: Overall quality, color harmony, layout balance
-- **Typography Analysis**: Font consistency and readability
-- **Accessibility Score**: A11y compliance evaluation  
-- **Mobile Responsiveness**: Cross-device compatibility
-- **Priority Fixes**: Specific CSS/HTML improvements
-- **Detailed Feedback**: Comprehensive design recommendations
-
-## Architecture
-
-```
-src/
-├── types.ts         # TypeScript interfaces
-├── screenshot.ts    # Playwright screenshot service
-├── analyzer.ts      # AI analysis integration
-├── watcher.ts       # File & server monitoring
-└── index.ts         # Main application entry
-```
-
-## Example Output
-
-```
-🎨 PixelPolish AI Agent Starting...
-📋 Configuration:
-   PixelPolish URL: http://localhost:3002
-   Local Directory: /path/to/local
-   AI Provider: openai
-   Auto-fix: false
-
-✅ PixelPolish server is running
-🔔 New analysis detected at 2024-05-31T21:15:30.123Z
-🔍 Processing new analysis for: landing-page.html
-📸 Taking screenshot of: http://localhost:3002/local/landing-page.html
-✅ Screenshot saved: ./screenshots/landing-page_1685560530123.png
-
-🤖 AI Analysis Results:
-   Visual Score: 72%
-   Technical Score: 32%
-   Priority Fixes: 3
-
-🔧 Priority Fixes:
-   1. [HIGH] .hero-section: Inconsistent padding and spacing
-   2. [MEDIUM] .cta-button: Button size may be too large for mobile
-   3. [LOW] .footer: Improve color contrast for accessibility
-```
-
-## Integration with PixelPolish
-
-This agent is designed to work alongside the main PixelPolish server:
-
-1. **Main Server** (`../src/index.js`) - Provides technical analysis
-2. **AI Agent** (this project) - Adds visual AI analysis and automated fixes
-3. **Local Files** (`../local/`) - HTML files being analyzed
-4. **Dashboard** (`http://localhost:3002`) - View results
-
-## Troubleshooting
-
-### Server Connection Issues
-
-```bash
-# Test server connection
-npm run test
-
-# Check if PixelPolish server is running
-curl http://localhost:3002/health
-```
-
-### Screenshot Issues
-
-```bash
-# Reinstall Playwright browsers
-npx playwright install chromium
-
-# Test screenshot service
-npm run test
-```
-
-### AI Analysis Not Working
-
-- Verify API keys are set correctly
-- Check network connectivity
-- Review AI provider quotas/limits
-- Use mock analysis mode for testing
-
-## Development
-
-### Adding New AI Providers
-
-1. Extend the `AIAnalyzer` class in `src/analyzer.ts`
-2. Add provider-specific implementation
-3. Update type definitions in `src/types.ts`
-
-### Customizing Analysis
-
-Modify the analysis prompt in `src/analyzer.ts` to focus on specific design aspects:
+### Custom AI Prompts
+Modify `src/analyzer.ts` to customize AI analysis:
 
 ```typescript
 private buildAnalysisPrompt(technicalScore: number, issuesCount: number): string {
-  return `Your custom analysis prompt...`;
+  return `Your custom analysis prompt focusing on specific design aspects...`;
 }
 ```
+
+### Adding New Heuristics Rules
+Extend `src/heuristics-engine.ts`:
+
+```typescript
+class CustomRule extends BaseRule {
+  constructor() {
+    super('Custom Rule', 1.5);
+  }
+
+  async evaluate(domData: DOMData, cssData: CSSData): Promise<RuleResult> {
+    // Your custom rule logic
+  }
+}
+```
+
+## 🌟 Why This Architecture?
+
+### ✅ **Advantages of Unified System**
+- **Single Deployment** - One service handles everything
+- **Consistent Data Flow** - No inter-service communication overhead  
+- **Comprehensive Analysis** - Technical + visual assessment combined
+- **Real-time Processing** - Immediate results with live dashboard
+- **Simplified Maintenance** - Single codebase to manage
+
+### 🔄 **Compared to Split Architecture**
+| Feature | Unified Agent | Split System |
+|---------|---------------|--------------|
+| Setup Complexity | ✅ Simple | ❌ Complex |
+| Performance | ✅ Fast | ⚠️ Network overhead |
+| Data Consistency | ✅ Guaranteed | ⚠️ Sync issues |
+| Resource Usage | ✅ Efficient | ❌ Duplicate services |
+| Development | ✅ Streamlined | ❌ Multi-repo |
+
+## 📝 Example Workflow
+
+1. **File Monitoring** - Place HTML file in `local/` directory
+2. **Auto-Detection** - File watcher triggers analysis
+3. **DOM Capture** - Puppeteer extracts page structure
+4. **CSS Analysis** - Pattern detection and consistency checking
+5. **Technical Scoring** - 190-point heuristics evaluation
+6. **Screenshot Capture** - Playwright visual state capture
+7. **AI Assessment** - GPT-4V/Claude visual analysis
+8. **Fix Generation** - Priority improvement suggestions
+9. **Dashboard Update** - Real-time results display
+10. **Optional Auto-Fix** - Automated code improvements
+
+## 🔐 Environment Variables
+
+```bash
+# AI Analysis (optional)
+OPENAI_API_KEY=sk-...           # For GPT-4 Vision
+ANTHROPIC_API_KEY=sk-ant-...    # For Claude Vision
+
+# Development
+NODE_ENV=development            # Enable debug logging
+```
+
+## 🎯 Use Cases
+
+- **Design System Audits** - Consistency checking across components
+- **Accessibility Reviews** - A11y compliance validation
+- **Performance Optimization** - DOM complexity analysis
+- **Visual QA** - AI-powered design quality assessment
+- **Automated Fixes** - Intelligent code improvements
+- **Real-time Monitoring** - Continuous design quality tracking
+
+## 🚀 Next Steps
+
+The comprehensive AI agent is ready for production use. Consider these enhancements:
+
+- **Multi-file Analysis** - Batch processing capabilities
+- **Custom Rule Engine** - User-defined heuristics
+- **Fix Automation** - Direct code modification
+- **Integration APIs** - CI/CD pipeline integration
+- **Advanced AI Models** - Specialized design assessment
+
+---
+
+**🎉 You now have a complete, self-contained AI agent that provides comprehensive UI analysis and automated fixing capabilities!**

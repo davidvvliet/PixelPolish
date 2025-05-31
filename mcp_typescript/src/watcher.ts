@@ -1,5 +1,5 @@
 /**
- * File watcher service that monitors PixelPolish server for changes
+ * File watcher service that monitors for changes and triggers analysis
  */
 
 import chokidar from 'chokidar';
@@ -9,14 +9,18 @@ import type { AnalysisData, PixelPolishConfig } from './types.js';
 import { ScreenshotService } from './screenshot.js';
 import { AIAnalyzer } from './analyzer.js';
 
+interface WatcherConfig extends PixelPolishConfig {
+  pixelpolishUrl: string;
+}
+
 export class PixelPolishWatcher {
-  private config: PixelPolishConfig;
+  private config: WatcherConfig;
   private screenshotService: ScreenshotService;
   private aiAnalyzer: AIAnalyzer;
   private lastAnalysisTime: string | null = null;
   private isRunning = false;
 
-  constructor(config: PixelPolishConfig) {
+  constructor(config: WatcherConfig) {
     this.config = config;
     this.screenshotService = new ScreenshotService(config.screenshotsDir);
     this.aiAnalyzer = new AIAnalyzer(config.aiProvider);

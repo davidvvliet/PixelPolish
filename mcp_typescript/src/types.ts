@@ -1,9 +1,9 @@
 /**
- * Type definitions for PixelPolish MCP Server
+ * Comprehensive type definitions for PixelPolish AI Agent
  */
 
 export interface PixelPolishConfig {
-  pixelpolishUrl: string;
+  port: number;
   localDir: string;
   screenshotsDir: string;
   watchInterval: number;
@@ -22,12 +22,18 @@ export interface AnalysisData {
   };
 }
 
+// === DOM Analysis Types ===
+
 export interface DOMData {
   url: string;
   title: string;
+  viewport: {
+    width: number;
+    height: number;
+  };
   elements: DOMElement[];
   totalElements: number;
-  structure: any;
+  structure: DOMStructure;
   capturedAt: string;
 }
 
@@ -50,34 +56,142 @@ export interface DOMElement {
   attributes: Record<string, string>;
 }
 
-export interface CSSData {
-  layoutStyles: any[];
-  spacing: any;
-  typography: any;
-  positioning: any;
+export interface DOMStructure {
+  headings: Array<{
+    level: number;
+    text: string;
+    id?: string;
+  }>;
+  navigation: Array<{
+    type: string;
+    links: Array<{
+      text: string;
+      href?: string;
+    }>;
+  }>;
+  forms: Array<{
+    action?: string;
+    method: string;
+    inputs: Array<{
+      type: string;
+      name?: string;
+      required: boolean;
+    }>;
+  }>;
+  images: Array<{
+    src?: string;
+    alt?: string;
+    width?: string;
+    height?: string;
+  }>;
+  links: Array<{
+    href: string;
+    text: string;
+    target?: string;
+  }>;
 }
+
+// === CSS Analysis Types ===
+
+export interface CSSData {
+  layoutStyles: LayoutStyle[];
+  spacing: SpacingAnalysis;
+  typography: TypographyAnalysis;
+  colors: ColorAnalysis;
+  positioning: PositioningAnalysis;
+  responsiveness: ResponsivenessAnalysis;
+}
+
+export interface LayoutStyle {
+  elementIndex: number;
+  tagName: string;
+  id?: string;
+  className?: string;
+  layout: Record<string, string>;
+  isFlexContainer: boolean;
+  isGridContainer: boolean;
+  isPositioned: boolean;
+  hasFloat: boolean;
+}
+
+export interface SpacingAnalysis {
+  marginPatterns: Map<string, number>;
+  paddingPatterns: Map<string, number>;
+  inconsistencies: Array<{
+    elementIndex: number;
+    type: 'margin' | 'padding';
+    issue: string;
+    values: any;
+  }>;
+  recommendations: string[];
+}
+
+export interface TypographyAnalysis {
+  fontSizes: Map<string, number>;
+  fontFamilies: Map<string, number>;
+  colors: Map<string, number>;
+  inconsistencies: any[];
+}
+
+export interface ColorAnalysis {
+  backgroundColor: Map<string, number>;
+  textColors: Map<string, number>;
+  borderColors: Map<string, number>;
+  colorScheme: string[];
+  contrastIssues: any[];
+}
+
+export interface PositioningAnalysis {
+  positionTypes: Map<string, number>;
+  zIndexLayers: Map<string, number>;
+  overlaps: any[];
+  misalignments: any[];
+}
+
+export interface ResponsivenessAnalysis {
+  hasMediaQueries: boolean;
+  breakpoints: number[];
+  flexboxUsage: number;
+  gridUsage: number;
+  issues: any[];
+}
+
+// === Heuristics Analysis Types ===
 
 export interface HeuristicsAnalysis {
   score: number;
+  maxScore: number;
   scorePercentage: number;
   issues: Issue[];
-  recommendations: string[];
+  recommendations: Recommendation[];
   summary: {
     totalIssues: number;
-    criticalIssues: number;
-    highIssues: number;
-    mediumIssues: number;
-    lowIssues: number;
+    severityCounts: {
+      critical: number;
+      high: number;
+      medium: number;
+      low: number;
+    };
+    typeCounts: Record<string, number>;
+    topRecommendations: Recommendation[];
   };
   ruleResults: RuleResult[];
 }
 
 export interface Issue {
+  type: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
   message: string;
   suggestion?: string;
   element?: string;
-  rule: string;
+  elementIndex?: number;
+}
+
+export interface Recommendation {
+  type: string;
+  priority: number;
+  message: string;
+  action: string;
 }
 
 export interface RuleResult {
@@ -85,8 +199,10 @@ export interface RuleResult {
   score: number;
   maxScore: number;
   issues: Issue[];
-  recommendations: string[];
+  recommendations: Recommendation[];
 }
+
+// === Screenshot Types ===
 
 export interface ScreenshotResult {
   success: boolean;
@@ -96,6 +212,8 @@ export interface ScreenshotResult {
   timestamp: number;
   error?: string;
 }
+
+// === AI Analysis Types ===
 
 export interface AIAnalysis {
   visual_assessment: {
@@ -122,6 +240,19 @@ export interface PriorityFix {
   css_change?: string;
   html_change?: string;
   reasoning: string;
+}
+
+// === Combined Analysis Result ===
+
+export interface ComprehensiveAnalysis {
+  success: boolean;
+  filename: string;
+  analyzedAt: string;
+  technical: HeuristicsAnalysis;
+  visual: AIAnalysis;
+  screenshot: ScreenshotResult;
+  combined_score: number;
+  priority_actions: PriorityFix[];
 }
 
 export interface McpToolResult {

@@ -1,19 +1,33 @@
-import puppeteer from 'puppeteer';
+/**
+ * DOM Capture service using Puppeteer for comprehensive element analysis
+ */
+
+import puppeteer, { Browser, Page } from 'puppeteer';
 import * as cheerio from 'cheerio';
+import type { DOMData, DOMElement, DOMStructure } from './types.js';
 
-export class DOMCapture {
-  constructor() {
-    // No longer need to store browser instance
-  }
+export class DOMCaptureService {
+  private layoutProperties = new Set([
+    'display', 'position', 'top', 'left', 'right', 'bottom',
+    'margin', 'padding', 'width', 'height', 'min-width', 'max-width',
+    'min-height', 'max-height', 'flex', 'flex-direction', 'flex-wrap',
+    'justify-content', 'align-items', 'align-content', 'grid',
+    'grid-template-columns', 'grid-template-rows', 'grid-gap',
+    'float', 'clear', 'overflow', 'z-index', 'font-size', 'font-family',
+    'color', 'background-color', 'border', 'border-radius', 'box-shadow'
+  ]);
 
-  async capture(url) {
-    let browser = null;
-    let page = null;
+  /**
+   * Capture DOM structure and element data from a URL
+   */
+  async capture(url: string): Promise<DOMData> {
+    let browser: Browser | null = null;
+    let page: Page | null = null;
 
     try {
       // Create a fresh browser instance for each capture
       browser = await puppeteer.launch({
-        headless: 'new',
+        headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
       
@@ -24,6 +38,8 @@ export class DOMCapture {
 
       // Set viewport for consistent rendering
       await page.setViewport({ width: 1920, height: 1080 });
+
+      console.log(`🔍 Capturing DOM structure from: ${url}`);
 
       // Navigate to the page
       await page.goto(url, { 
@@ -36,16 +52,15 @@ export class DOMCapture {
 
       // Extract DOM structure and element data
       const domData = await page.evaluate(() => {
-        const elements = [];
+        const elements: any[] = [];
         const walker = document.createTreeWalker(
           document.body,
           NodeFilter.SHOW_ELEMENT,
-          null,
-          false
+          null
         );
 
-        let node;
-        while (node = walker.nextNode()) {
+        let node: Element | null;
+        while (node = walker.nextNode() as Element) {
           const rect = node.getBoundingClientRect();
           const computedStyle = window.getComputedStyle(node);
           
@@ -92,7 +107,7 @@ export class DOMCapture {
                 gridTemplateColumns: computedStyle.gridTemplateColumns,
                 gridTemplateRows: computedStyle.gridTemplateRows
               },
-              attributes: Array.from(node.attributes).reduce((acc, attr) => {
+              attributes: Array.from(node.attributes).reduce((acc: Record<string, string>, attr: Attr) => {
                 acc[attr.name] = attr.value;
                 return acc;
               }, {})
@@ -119,6 +134,8 @@ export class DOMCapture {
       // Extract additional structural information
       const structure = this.extractStructure($);
 
+      console.log(`✅ DOM captured: ${domData.totalElements} elements`);
+
       return {
         ...domData,
         structure,
@@ -136,8 +153,11 @@ export class DOMCapture {
     }
   }
 
-  extractStructure($) {
-    const structure = {
+  /**
+   * Extract structural information using Cheerio
+   */
+  private extractStructure($: cheerio.CheerioAPI): DOMStructure {
+    const structure: DOMStructure = {
       headings: [],
       navigation: [],
       forms: [],
@@ -150,7 +170,7 @@ export class DOMCapture {
       structure.headings.push({
         level: parseInt(el.tagName[1]),
         text: $(el).text().trim(),
-        id: $(el).attr('id') || null
+        id: $(el).attr('id') || undefined
       });
     });
 
@@ -191,7 +211,7 @@ export class DOMCapture {
     // Extract links
     $('a[href]').each((i, el) => {
       structure.links.push({
-        href: $(el).attr('href'),
+        href: $(el).attr('href') || '',
         text: $(el).text().trim(),
         target: $(el).attr('target')
       });
