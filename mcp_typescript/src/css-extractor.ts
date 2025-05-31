@@ -27,7 +27,7 @@ export class CSSExtractorService {
    * Extract comprehensive CSS analysis from DOM elements
    */
   async extract(elements: DOMElement[]): Promise<CSSData> {
-    console.log('🎨 Analyzing CSS patterns and styles...');
+    console.error('🎨 Analyzing CSS patterns and styles...');
 
     const cssAnalysis: CSSData = {
       layoutStyles: this.extractLayoutStyles(elements),
@@ -38,7 +38,7 @@ export class CSSExtractorService {
       responsiveness: this.analyzeResponsiveness(elements)
     };
 
-    console.log('✅ CSS analysis complete');
+    console.error('✅ CSS analysis complete');
     return cssAnalysis;
   }
 
