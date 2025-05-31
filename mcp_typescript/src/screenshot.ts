@@ -2,7 +2,7 @@
  * Screenshot capture service using Playwright
  */
 
-import { chromium, Browser, BrowserContext, Page } from 'playwright';
+import { chromium, Browser, BrowserContext } from 'playwright';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import type { ScreenshotResult } from './types.js';

@@ -5,7 +5,7 @@
 import chokidar from 'chokidar';
 import fetch from 'node-fetch';
 import { join } from 'path';
-import type { AnalysisData, PixelPolishConfig, AIAnalysis } from './types.js';
+import type { AnalysisData, PixelPolishConfig } from './types.js';
 import { ScreenshotService } from './screenshot.js';
 import { AIAnalyzer } from './analyzer.js';
 
@@ -111,36 +111,19 @@ export class PixelPolishWatcher {
    */
   async applyFixes(filename: string, fixes: any[]): Promise<boolean> {
     try {
-      const filePath = join(this.config.localDir, filename);
-      
-      // Read file content
-      const fs = await import('fs/promises');
-      const content = await fs.readFile(filePath, 'utf-8');
-
-      let modifiedContent = content;
-      let appliedFixes = 0;
-
-      for (const fix of fixes) {
-        // This is a simplified implementation
-        // In production, you'd want more sophisticated HTML/CSS parsing
-        if (fix.css_change) {
-          // Simple CSS replacement (needs improvement)
-          console.log(`✅ Would apply CSS fix: ${fix.css_change}`);
-          appliedFixes++;
-        }
-
-        if (fix.html_change) {
-          // Simple HTML replacement (needs improvement)
-          console.log(`✅ Would apply HTML fix: ${fix.html_change}`);
-          appliedFixes++;
-        }
-      }
-
       // For now, just log what would be applied
-      console.log(`📝 Applied ${appliedFixes} fixes to ${filename}`);
+      // In the future, this would parse and modify the HTML/CSS files
+      console.log(`📝 Would apply ${fixes.length} fixes to ${filename}:`);
       
-      // Uncomment to actually apply changes:
-      // await fs.writeFile(filePath, modifiedContent, 'utf-8');
+      fixes.forEach((fix, index) => {
+        console.log(`   ${index + 1}. [${fix.priority}] ${fix.element}: ${fix.issue}`);
+        if (fix.css_change) {
+          console.log(`      CSS: ${fix.css_change}`);
+        }
+        if (fix.html_change) {
+          console.log(`      HTML: ${fix.html_change}`);
+        }
+      });
 
       return true;
     } catch (error) {
