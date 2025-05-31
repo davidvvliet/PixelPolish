@@ -10,6 +10,7 @@
  * 5. Response Handler - Applies or shows fixes
  */
 
+import 'dotenv/config';
 import chokidar from 'chokidar';
 import { spawn, ChildProcess } from 'child_process';
 import { join, resolve, extname } from 'path';

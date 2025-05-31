@@ -3,6 +3,7 @@
  * PixelPolish MCP Server - UI Analysis Tools for AI Assistants
  */
 
+import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
