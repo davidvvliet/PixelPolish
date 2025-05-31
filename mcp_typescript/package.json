@@ -5,10 +5,10 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').chmodSync('dist/index.js', '755')\"",
     "start": "npm run build && node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "server": "npm run build && node dist/server.js",
+    "server": "npm run build && node dist/index.js",
     "test": "npm run build && node dist/index.js --test",
     "clean": "rm -rf dist"
   },
@@ -37,7 +37,9 @@
     "cors": "^2.8.5",
     "serve-static": "^1.15.0",
     "cheerio": "^1.0.0-rc.12",
-    "css-tree": "^2.3.1"
+    "css-tree": "^2.3.1",
+    "@modelcontextprotocol/sdk": "*",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

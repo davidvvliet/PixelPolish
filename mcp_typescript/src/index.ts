@@ -1,297 +1,253 @@
 #!/usr/bin/env node
 /**
- * PixelPolish Comprehensive AI Agent - TypeScript Implementation
+ * PixelPolish Comprehensive AI Agent - MCP Server Implementation
  * 
- * Main entry point for the all-in-one AI-powered UI analysis and fixing agent
+ * Main entry point for the MCP-compatible AI-powered UI analysis agent.
  */
 
 import { resolve } from 'path';
-import type { PixelPolishConfig } from './types.js';
-import { PixelPolishServer } from './server.js';
-import { PixelPolishWatcher } from './watcher.js';
+import type { PixelPolishConfig, ComprehensiveAnalysis } from './types.js';
+import { PixelPolishServer } from './server.js'; // Will be used by the agent
+import { PixelPolishWatcher } from './watcher.js'; // May not be directly used by MCP server initially
 
-// Default configuration
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+// Default configuration (can be overridden by env vars or MCP config)
 const DEFAULT_CONFIG: PixelPolishConfig = {
-  port: 3002,
-  localDir: resolve('../local'),
-  screenshotsDir: './screenshots',
-  watchInterval: 3000, // 3 seconds
-  aiProvider: 'openai',
-  autoFix: false // Start with false for safety
+  port: 3002, // Port for the internal Express server if still used for dashboard/local file serving
+  localDir: resolve(process.env.MCP_LOCAL_DIR || '../local'),
+  screenshotsDir: resolve(process.env.MCP_SCREENSHOTS_DIR || './screenshots'),
+  watchInterval: 3000,
+  aiProvider: (process.env.AI_PROVIDER === 'openai' || process.env.AI_PROVIDER === 'anthropic') ? process.env.AI_PROVIDER : 'openai',
+  autoFix: process.env.AUTO_FIX === 'true' // Start with false for safety
 };
 
-class PixelPolishAIAgent {
+class PixelPolishAIAgentInternal {
   private config: PixelPolishConfig;
-  private server: PixelPolishServer;
-  private watcher: PixelPolishWatcher | null = null;
+  // The Express server might still be useful for serving local files for analysis or a dashboard.
+  // If not, this can be refactored further.
+  public expressServer: PixelPolishServer; // Made public
+  // Watcher might be a separate tool or feature later if needed.
+  // private watcher: PixelPolishWatcher | null = null;
 
   constructor(config: Partial<PixelPolishConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.server = new PixelPolishServer(this.config);
+    // The PixelPolishServer (Express) might still be needed if we want to serve local files
+    // via HTTP for analysis, or if a dashboard is maintained.
+    // For MCP, the primary interaction is via tools.
+    this.expressServer = new PixelPolishServer(this.config);
   }
 
   /**
-   * Start the PixelPolish AI Agent in server mode
+   * Initializes services required for analysis (like screenshot service).
+   * This is crucial as the MCP server is long-running.
    */
-  async startServer(): Promise<void> {
-    console.log('🤖 PixelPolish Comprehensive AI Agent');
-    console.log('📋 Configuration:');
-    console.log(`   Port: ${this.config.port}`);
-    console.log(`   Local Directory: ${this.config.localDir}`);
-    console.log(`   Screenshots: ${resolve(this.config.screenshotsDir)}`);
-    console.log(`   AI Provider: ${this.config.aiProvider}`);
-    console.log(`   Auto-fix: ${this.config.autoFix}`);
-
-    try {
-      await this.server.start();
-      console.log('✅ Server mode started successfully');
-
-    } catch (error) {
-      console.error('❌ Failed to start server:', error);
-      process.exit(1);
-    }
+  async initializeServices(): Promise<void> {
+    // The original PixelPolishServer's start method initializes screenshotService.
+    // We need to ensure this happens.
+    await this.expressServer.initializeScreenshotService(); // Assuming this method exists or is refactored
+    console.log('🎨 PixelPolish services initialized.');
+  }
+  
+  /**
+   * Perform comprehensive analysis using the existing logic.
+   * This method will be called by the MCP tool.
+   */
+  async performComprehensiveAnalysis(url: string, filename?: string): Promise<ComprehensiveAnalysis> {
+    // This reuses the logic from the original PixelPolishServer class
+    return this.expressServer.performComprehensiveAnalysis(url, filename);
   }
 
   /**
-   * Start the AI Agent in monitoring mode (with file watcher)
+   * Gets the config.
    */
-  async startMonitoring(): Promise<void> {
-    console.log('👀 Starting in monitoring mode...');
-    
-    // Start server first
-    await this.startServer();
-    
-    // Then start file monitoring
-    this.watcher = new PixelPolishWatcher({
-      ...this.config,
-      pixelpolishUrl: `http://localhost:${this.config.port}`
-    });
-
-    // Start file system watcher for local files
-    this.watcher.startFileWatcher();
-
-    // Start main analysis watcher
-    await this.watcher.startWatching();
+  getConfig(): PixelPolishConfig {
+    return this.config;
   }
 
   /**
-   * Stop the agent
+   * Stops services.
    */
-  async stop(): Promise<void> {
-    console.log('⏹️ Stopping PixelPolish AI Agent...');
-    
-    if (this.watcher) {
-      await this.watcher.stopWatching();
-    }
-    
-    await this.server.stop();
-    console.log('✅ Agent stopped');
+  async stopServices(): Promise<void> {
+    await this.expressServer.stopScreenshotService(); // Assuming this method exists
+    console.log('🛑 PixelPolish services stopped.');
   }
 }
 
 /**
- * CLI interface
+ * Main MCP Server function
  */
-async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  
-  // Parse command line arguments
-  const config: Partial<PixelPolishConfig> = {};
-  let mode: 'server' | 'monitor' = 'server';
-  
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    
-    switch (arg) {
-      case '--port':
-        config.port = parseInt(args[++i]) || 3002;
-        break;
-      case '--local-dir':
-        config.localDir = resolve(args[++i]);
-        break;
-      case '--ai-provider':
-        const provider = args[++i];
-        if (provider === 'openai' || provider === 'anthropic') {
-          config.aiProvider = provider;
-        }
-        break;
-      case '--auto-fix':
-        config.autoFix = true;
-        break;
-      case '--no-auto-fix':
-        config.autoFix = false;
-        break;
-      case '--interval':
-        config.watchInterval = parseInt(args[++i]) || 3000;
-        break;
-      case '--monitor':
-        mode = 'monitor';
-        break;
-      case '--server':
-        mode = 'server';
-        break;
-      case '--test':
-        await runTests(config);
-        return;
-      case '--help':
-      case '-h':
-        showHelp();
-        return;
-      default:
-        if (arg.startsWith('-')) {
-          console.error(`❌ Unknown option: ${arg}`);
-          showHelp();
-          process.exit(1);
-        }
-    }
+async function mainMcp(): Promise<void> {
+  console.log('🤖 PixelPolish AI Agent - MCP Server starting...');
+
+  // Environment variables for API keys should be checked.
+  // The MCP server configuration will pass these.
+  if (DEFAULT_CONFIG.aiProvider === 'openai' && !process.env.OPENAI_API_KEY) {
+    console.warn('⚠️ OPENAI_API_KEY not found in env. AI analysis might fail or use mock data.');
+  }
+  if (DEFAULT_CONFIG.aiProvider === 'anthropic' && !process.env.ANTHROPIC_API_KEY) {
+    console.warn('⚠️ ANTHROPIC_API_KEY not found in env. AI analysis might fail or use mock data.');
   }
 
-  // Check for required environment variables
-  if (config.aiProvider === 'openai' && !process.env.OPENAI_API_KEY) {
-    console.warn('⚠️ OPENAI_API_KEY not found. AI analysis will use mock data.');
-  }
-  if (config.aiProvider === 'anthropic' && !process.env.ANTHROPIC_API_KEY) {
-    console.warn('⚠️ ANTHROPIC_API_KEY not found. AI analysis will use mock data.');
+  const agentInternal = new PixelPolishAIAgentInternal(DEFAULT_CONFIG);
+  await agentInternal.initializeServices();
+
+  // Start the internal Express server to serve local files and potentially the dashboard
+  try {
+    console.log('🚀 Starting internal Express server for local file serving...');
+    // The start method of PixelPolishServer also initializes the screenshot service,
+    // which is fine if initializeScreenshotService is idempotent.
+    await agentInternal.expressServer.start();
+    console.log('✅ Internal Express server started.');
+  } catch (error) {
+    console.error('❌ Failed to start internal Express server:', error);
+    // Decide if this is a fatal error for the MCP server
+    // For now, we'll let the MCP server continue, but local analysis might fail.
   }
 
-  // Create and start the agent
-  const agent = new PixelPolishAIAgent(config);
-
-  // Handle graceful shutdown
-  process.on('SIGINT', async () => {
-    console.log('\n👋 Shutting down...');
-    await agent.stop();
-    process.exit(0);
+  const mcpServer = new McpServer({
+    name: "pixelpolish-ai-agent", // From package.json
+    version: "2.0.0" // From package.json
   });
 
-  process.on('SIGTERM', async () => {
-    await agent.stop();
+  // Define the core analysis tool
+  mcpServer.tool(
+    "perform_comprehensive_analysis",
+    {
+      url: z.string().describe("The URL of the page/file to analyze. For local files, construct a file:// URL or use the analyze_local_file tool."),
+      filename: z.string().optional().describe("Optional filename, used for naming screenshots and reports if the URL is not descriptive (e.g., local file paths).")
+    },
+    async ({ url, filename }) => {
+      try {
+        console.log(`MCP Tool: perform_comprehensive_analysis called for URL: ${url}`);
+        const analysisResult = await agentInternal.performComprehensiveAnalysis(url, filename);
+        return {
+          content: [
+            {
+              type: "text",
+              // MCP tool results should be structured data, JSON is good.
+              text: JSON.stringify(analysisResult, null, 2), 
+            },
+          ],
+        };
+      } catch (error) {
+        console.error('MCP Tool Error - perform_comprehensive_analysis:', error);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error during analysis: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  mcpServer.tool(
+    "analyze_local_file",
+    {
+      filename: z.string().describe("The name of the HTML file in the configured 'localDir' to analyze."),
+    },
+    async ({ filename }) => {
+      try {
+        const config = agentInternal.getConfig();
+        // The PixelPolishServer is already configured to serve from localDir on a specific port.
+        // We need to ensure this server is running or its relevant parts are accessible.
+        // For simplicity, we'll assume the express server part of PixelPolishServer can be started
+        // or its file serving logic can be used.
+        // This might require starting the internal Express server if it's not already running.
+        // For now, let's assume the local file URL construction logic from PixelPolishServer can be used.
+        
+        // This logic was in PixelPolishServer:
+        // const localUrl = `http://localhost:${this.config.port}/local/${filename}?t=${Date.now()}`;
+        // To make this work, the internal Express server needs to be running.
+        // This is a slight architectural challenge: MCP server is stdio, Express is HTTP.
+        // One option: The MCP server could *start* the Express server on a known port.
+        // For now, let's construct a file:// URL, assuming DOMCaptureService can handle it.
+        // Or, better, reuse the existing logic that expects an HTTP URL for local files.
+        // This implies the internal Express server *must* be running.
+        
+        // Let's ensure the internal Express server is started by the MCP process.
+        // This is not ideal for a pure stdio MCP server but matches current PixelPolishServer design.
+        // A cleaner way would be for DOMCaptureService to directly read local files.
+        
+        // For now, we'll rely on the existing HTTP endpoint of the internal server.
+        // The internal server needs to be started.
+        // This is a temporary measure. Ideally, analysis logic shouldn't depend on a running HTTP server
+        // if the MCP server itself is stdio.
+        
+        // Let's assume the internal express server is started by initializeServices or similar.
+        // The original server.ts starts an HTTP server. We need to ensure that happens.
+        // The `PixelPolishServer` class has a `start` method.
+        // We could call `agentInternal.expressServer.start()` but that's async and might conflict.
+
+        // Simplification: Assume `performComprehensiveAnalysis` can handle `file:///` URLs
+        // or the `DOMCaptureService` is updated to do so.
+        // For now, we'll stick to the original design which used an HTTP URL for local files.
+        // This means the internal Express server needs to be running.
+        // The `initializeServices` could potentially start it.
+        // Let's modify `PixelPolishServer` to allow starting without blocking, or make `performComprehensiveAnalysis`
+        // more flexible with local paths.
+
+        // Given the current structure of PixelPolishServer, it expects to serve local files over HTTP.
+        // We will use the `analyze-local` endpoint logic from `PixelPolishServer`
+        const localUrl = `http://localhost:${agentInternal.getConfig().port}/local/${filename}?t=${Date.now()}`;
+        console.log(`MCP Tool: analyze_local_file called for filename: ${filename}, URL: ${localUrl}`);
+
+        const analysisResult = await agentInternal.performComprehensiveAnalysis(localUrl, filename);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(analysisResult, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        console.error('MCP Tool Error - analyze_local_file:', error);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error during local file analysis: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Graceful shutdown for MCP server
+  const shutdown = async () => {
+    console.log('\n👋 Shutting down PixelPolish MCP server...');
+    await agentInternal.stopServices();
+    // McpServer doesn't have an explicit stop, transport handles it.
     process.exit(0);
-  });
+  };
 
-  // Start the agent in the specified mode
-  if (mode === 'monitor') {
-    await agent.startMonitoring();
-  } else {
-    await agent.startServer();
-  }
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
+  const transport = new StdioServerTransport();
+  await mcpServer.connect(transport);
+  console.error('✅ PixelPolish AI Agent MCP Server running on stdio. Ready for commands.');
+  // console.error is used for logs that shouldn't interfere with stdio JSON communication.
 }
 
-/**
- * Show help information
- */
-function showHelp(): void {
-  console.log(`
-🤖 PixelPolish Comprehensive AI Agent
+// Run the MCP server main function
+// Correctly check if the module is the main module
+const currentFileUrl = import.meta.url;
+// Ensure process.argv[1] is correctly accessed for the main module path
+const mainModulePath = `file://${process.argv[1]}`;
 
-USAGE:
-  npm start [options]
-  node dist/index.js [options]
-
-MODES:
-  --server                     Server mode only (default)
-  --monitor                    Server + file monitoring mode
-
-OPTIONS:
-  --port <port>                Server port (default: 3002)
-  --local-dir <path>           Local HTML files directory (default: ../local)
-  --ai-provider <provider>     AI provider: openai|anthropic (default: openai)
-  --auto-fix                   Enable automatic CSS/HTML fixes (default: disabled)
-  --no-auto-fix                Disable automatic fixes
-  --interval <ms>              Watch interval in milliseconds (default: 3000)
-  --test                       Run connection tests
-  --help, -h                   Show this help
-
-ENVIRONMENT VARIABLES:
-  OPENAI_API_KEY              OpenAI API key for GPT-4 Vision
-  ANTHROPIC_API_KEY           Anthropic API key for Claude Vision
-
-EXAMPLES:
-  npm start                                    # Server mode
-  npm start -- --monitor                      # Server + monitoring
-  npm start -- --auto-fix --ai-provider anthropic
-  npm start -- --port 3000 --interval 5000
-
-FEATURES:
-  🔍 DOM Structure Analysis (Puppeteer)
-  🎨 CSS Pattern Extraction  
-  📊 190-Point Heuristics Scoring
-  📸 Screenshot Capture (Playwright)
-  🤖 AI Visual Assessment (GPT-4V/Claude)
-  🔧 Automated Fix Suggestions
-  📱 Responsive Dashboard
-  ⚡ Real-time File Monitoring
-
-Dashboard: http://localhost:3002
-`);
-}
-
-/**
- * Run connection and functionality tests
- */
-async function runTests(config: Partial<PixelPolishConfig>): Promise<void> {
-  console.log('🧪 Running PixelPolish AI Agent Tests...\n');
-
-  const finalConfig = { ...DEFAULT_CONFIG, ...config };
-
-  // Test 1: Services initialization
-  console.log('1. Testing service initialization...');
-  try {
-    const { DOMCaptureService } = await import('./dom-capture.js');
-    const { CSSExtractorService } = await import('./css-extractor.js');
-    const { HeuristicsEngineService } = await import('./heuristics-engine.js');
-    const { ScreenshotService } = await import('./screenshot.js');
-    const { AIAnalyzer } = await import('./analyzer.js');
-
-    new DOMCaptureService();
-    new CSSExtractorService();
-    new HeuristicsEngineService();
-    new ScreenshotService(finalConfig.screenshotsDir);
-    new AIAnalyzer(finalConfig.aiProvider);
-
-    console.log('   ✅ All services initialized successfully');
-  } catch (error) {
-    console.log('   ❌ Service initialization failed');
-    console.log(`      Error: ${error}`);
-  }
-
-  // Test 2: Screenshot service
-  console.log('\n2. Testing screenshot service...');
-  try {
-    const { ScreenshotService } = await import('./screenshot.js');
-    const screenshotService = new ScreenshotService('./test-screenshots');
-    await screenshotService.initialize();
-    console.log('   ✅ Screenshot service: OK');
-    await screenshotService.close();
-  } catch (error) {
-    console.log('   ❌ Screenshot service: FAILED');
-    console.log(`      Error: ${error}`);
-  }
-
-  // Test 3: Server startup (brief test)
-  console.log('\n3. Testing server startup...');
-  try {
-    const server = new PixelPolishServer(finalConfig);
-    console.log('   ✅ Server configuration: OK');
-  } catch (error) {
-    console.log('   ❌ Server configuration: FAILED');
-    console.log(`      Error: ${error}`);
-  }
-
-  console.log('\n🎯 Test Summary:');
-  console.log('   Services: PASS');
-  console.log('   Ready for operation: ✅');
-
-  console.log('\n💡 To start the full system:');
-  console.log('   Server mode: npm start');
-  console.log('   Monitor mode: npm start -- --monitor');
-  console.log('   Dashboard: http://localhost:3002');
-}
-
-// Run the CLI if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => {
-    console.error('❌ Fatal error:', error);
+if (currentFileUrl === mainModulePath) {
+  mainMcp().catch(error => {
+    console.error('❌ Fatal MCP error:', error);
     process.exit(1);
   });
-} 
+}

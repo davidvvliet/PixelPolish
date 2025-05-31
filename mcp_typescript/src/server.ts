@@ -156,7 +156,7 @@ export class PixelPolishServer {
   /**
    * Perform comprehensive analysis combining all services
    */
-  private async performComprehensiveAnalysis(url: string, filename?: string): Promise<ComprehensiveAnalysis> {
+  public async performComprehensiveAnalysis(url: string, filename?: string): Promise<ComprehensiveAnalysis> {
     const startTime = Date.now();
     
     try {
@@ -421,11 +421,28 @@ export class PixelPolishServer {
   }
 
   /**
-   * Start the Express server
+   * Initializes only the screenshot service.
+   * Useful for MCP context where Express server might not be fully started.
+   */
+  async initializeScreenshotService(): Promise<void> {
+    await this.screenshotService.initialize();
+    console.log('📸 Screenshot service initialized.');
+  }
+
+  /**
+   * Stops only the screenshot service.
+   */
+  async stopScreenshotService(): Promise<void> {
+    await this.screenshotService.close();
+    console.log('📸 Screenshot service stopped.');
+  }
+
+  /**
+   * Start the Express server (includes screenshot service initialization)
    */
   async start(): Promise<void> {
     // Initialize screenshot service
-    await this.screenshotService.initialize();
+    await this.initializeScreenshotService();
 
     return new Promise((resolve) => {
       this.app.listen(this.config.port, () => {
@@ -441,10 +458,11 @@ export class PixelPolishServer {
   }
 
   /**
-   * Stop the server
+   * Stop the server (includes screenshot service stop)
    */
   async stop(): Promise<void> {
-    await this.screenshotService.close();
-    console.log('🛑 Server stopped');
+    await this.stopScreenshotService();
+    // Add any other specific Express server shutdown logic here if needed
+    console.log('🛑 Express Server and services stopped');
   }
-} 
+}
