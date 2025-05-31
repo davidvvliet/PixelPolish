@@ -23,13 +23,13 @@
   "license": "MIT",
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
+    "chokidar": "^3.5.3",
     "cors": "^2.8.5",
     "css-tree": "^2.3.1",
     "dom-parser": "^0.1.6",
     "express": "^4.18.2",
     "node-fetch": "^3.3.2",
-    "puppeteer": "^21.0.0",
-    "chokidar": "^3.5.3",
+    "puppeteer": "^24.9.0",
     "serve-static": "^1.15.0"
   },
   "devDependencies": {
