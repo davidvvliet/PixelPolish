@@ -29,7 +29,7 @@ export class HeuristicsEngineService {
    * Run comprehensive heuristics analysis
    */
   async analyze(domData: DOMData, cssData: CSSData): Promise<HeuristicsAnalysis> {
-    console.log('📊 Running heuristics analysis...');
+    console.error('📊 Running heuristics analysis...');
 
     const analysis: HeuristicsAnalysis = {
       score: 0,
@@ -54,7 +54,7 @@ export class HeuristicsEngineService {
     // Run each heuristic rule
     for (const rule of this.rules) {
       try {
-        console.log(`  Running ${rule.name}...`);
+        console.error(`  Running ${rule.name}...`);
         const result = await rule.evaluate(domData, cssData);
         
         analysis.ruleResults.push({
@@ -89,7 +89,7 @@ export class HeuristicsEngineService {
     // Generate summary
     analysis.summary = this.generateSummary(analysis);
 
-    console.log(`✅ Analysis complete: ${analysis.scorePercentage}% (${analysis.issues.length} issues)`);
+    console.error(`✅ Analysis complete: ${analysis.scorePercentage}% (${analysis.issues.length} issues)`);
     
     return analysis;
   }

@@ -15,7 +15,7 @@ export class AIAnalyzer {
    * Analyze screenshot using AI vision models
    */
   async analyzeScreenshot(screenshotBase64: string, technicalData: AnalysisData): Promise<AIAnalysis> {
-    console.log(`🤖 Running AI visual analysis with ${this.provider}...`);
+    console.error(`🤖 Running AI visual analysis with ${this.provider}...`);
 
     try {
       if (this.provider === 'openai') {

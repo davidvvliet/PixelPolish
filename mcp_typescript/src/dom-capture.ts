@@ -39,7 +39,7 @@ export class DOMCaptureService {
       // Set viewport for consistent rendering
       await page.setViewport({ width: 1920, height: 1080 });
 
-      console.log(`🔍 Capturing DOM structure from: ${url}`);
+      console.error(`🔍 Capturing DOM structure from: ${url}`);
 
       // Navigate to the page
       await page.goto(url, { 
@@ -134,7 +134,7 @@ export class DOMCaptureService {
       // Extract additional structural information
       const structure = this.extractStructure($);
 
-      console.log(`✅ DOM captured: ${domData.totalElements} elements`);
+      console.error(`✅ DOM captured: ${domData.totalElements} elements`);
 
       return {
         ...domData,

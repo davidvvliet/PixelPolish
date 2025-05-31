@@ -23,7 +23,7 @@ export class ScreenshotService {
     if (this.isInitialized) return;
 
     try {
-      console.log('🎭 Initializing Playwright browser...');
+      console.error('🎭 Initializing Playwright browser...');
       
       // Ensure screenshots directory exists
       await mkdir(this.screenshotsDir, { recursive: true });
@@ -41,7 +41,7 @@ export class ScreenshotService {
       });
 
       this.isInitialized = true;
-      console.log('✅ Playwright browser initialized');
+      console.error('✅ Playwright browser initialized');
 
     } catch (error) {
       console.error('❌ Failed to initialize Playwright browser:', error);
@@ -60,7 +60,7 @@ export class ScreenshotService {
     let page: Page | null = null;
 
     try {
-      console.log(`📸 Taking screenshot of: ${url}`);
+      console.error(`📸 Taking screenshot of: ${url}`);
 
       // Create new page with cache disabled
       page = await this.browser!.newPage();
@@ -112,7 +112,7 @@ export class ScreenshotService {
       // Convert to base64 for embedding
       const screenshotBase64 = screenshotBuffer.toString('base64');
 
-      console.log(`✅ Screenshot saved: ${screenshotPath}`);
+      console.error(`✅ Screenshot saved: ${screenshotPath}`);
 
       return {
         success: true,
@@ -154,11 +154,11 @@ export class ScreenshotService {
    */
   async close(): Promise<void> {
     if (this.browser) {
-      console.log('🛑 Closing Playwright browser...');
+      console.error('🛑 Closing Playwright browser...');
       await this.browser.close();
       this.browser = null;
       this.isInitialized = false;
-      console.log('✅ Playwright browser closed');
+      console.error('✅ Playwright browser closed');
     }
   }
 } 

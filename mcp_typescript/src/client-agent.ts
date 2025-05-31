@@ -65,7 +65,7 @@ class PixelPolishAIAgent {
   private startFileWatcher(): void {
     const watchPattern = join(this.config.watchDirectory, '**/*.{html,css,js,jsx,ts,tsx}');
     
-    console.log(`👀 Starting file watcher on: ${watchPattern}`);
+    console.error(`👀 Starting file watcher on: ${watchPattern}`);
 
     const watcher = chokidar.watch(watchPattern, {
       ignored: /node_modules|\.git|dist|build/,
@@ -81,7 +81,7 @@ class PixelPolishAIAgent {
 
     // Graceful shutdown
     process.on('SIGINT', async () => {
-      console.log('\n🛑 Shutting down AI agent...');
+      console.error('\n🛑 Shutting down AI agent...');
       await watcher.close();
       await this.stopLocalServer();
       await this.stopMCPServer();
@@ -106,7 +106,7 @@ class PixelPolishAIAgent {
       changeType
     };
 
-    console.log(`📝 File ${changeType}: ${fileName}`);
+    console.error(`📝 File ${changeType}: ${fileName}`);
 
     // Add to analysis queue
     this.analysisQueue.push(event);
@@ -134,7 +134,7 @@ class PixelPolishAIAgent {
       const htmlFiles = events.filter(e => e.fileType === '.html' && e.changeType !== 'unlink');
       
       if (htmlFiles.length === 0) {
-        console.log('📄 No HTML files to analyze');
+        console.error('📄 No HTML files to analyze');
         return;
       }
 
@@ -154,7 +154,7 @@ class PixelPolishAIAgent {
   }
 
   private async analyzeFile(event: FileChangeEvent): Promise<void> {
-    console.log(`🔍 Starting analysis of: ${event.fileName}`);
+    console.error(`🔍 Starting analysis of: ${event.fileName}`);
 
     try {
       // Build local URL
@@ -184,7 +184,7 @@ class PixelPolishAIAgent {
   private async ensureMCPServer(): Promise<void> {
     if (this.mcpProcess && !this.mcpProcess.killed) return;
 
-    console.log('🤖 Starting MCP server...');
+    console.error('🤖 Starting MCP server...');
 
     this.mcpProcess = spawn('npm', ['start'], {
       cwd: resolve('.'),
@@ -298,10 +298,10 @@ class PixelPolishAIAgent {
    * 5. RESPONSE HANDLER - Apply or show fixes
    */
   private async handleAnalysisResult(event: FileChangeEvent, result: AnalysisResult): Promise<void> {
-    console.log(`📊 Analysis complete for ${event.fileName}:`);
-    console.log(`   Score: ${result.score}%`);
-    console.log(`   Issues: ${result.issues?.length || 0}`);
-    console.log(`   Fixes: ${result.fixes?.length || 0}`);
+    console.error(`📊 Analysis complete for ${event.fileName}:`);
+    console.error(`   Score: ${result.score}%`);
+    console.error(`   Issues: ${result.issues?.length || 0}`);
+    console.error(`   Fixes: ${result.fixes?.length || 0}`);
 
     // Save detailed results
     await this.saveAnalysisReport(event, result);
@@ -335,7 +335,7 @@ class PixelPolishAIAgent {
       };
 
       await writeFile(reportPath, JSON.stringify(report, null, 2));
-      console.log(`💾 Analysis report saved: ${reportPath}`);
+      console.error(`💾 Analysis report saved: ${reportPath}`);
 
     } catch (error) {
       console.error('❌ Failed to save analysis report:', error);
@@ -343,31 +343,31 @@ class PixelPolishAIAgent {
   }
 
   private displayAnalysisSummary(event: FileChangeEvent, result: AnalysisResult): void {
-    console.log(`\n📋 === Analysis Summary for ${event.fileName} ===`);
+    console.error(`\n📋 === Analysis Summary for ${event.fileName} ===`);
     
     if (result.score !== undefined) {
       const scoreEmoji = result.score >= 80 ? '🟢' : result.score >= 60 ? '🟡' : '🔴';
-      console.log(`${scoreEmoji} Overall Score: ${result.score}%`);
+      console.error(`${scoreEmoji} Overall Score: ${result.score}%`);
     }
 
     if (result.issues && result.issues.length > 0) {
-      console.log(`\n🔍 Top Issues:`);
+      console.error(`\n🔍 Top Issues:`);
       result.issues.slice(0, 3).forEach((issue, i) => {
-        console.log(`   ${i + 1}. ${issue.description}`);
+        console.error(`   ${i + 1}. ${issue.description}`);
       });
     }
 
     if (result.fixes && result.fixes.length > 0) {
-      console.log(`\n🔧 Priority Fixes:`);
+      console.error(`\n🔧 Priority Fixes:`);
       result.fixes.slice(0, 3).forEach((fix, i) => {
-        console.log(`   ${i + 1}. ${fix.description}`);
+        console.error(`   ${i + 1}. ${fix.description}`);
         if (fix.css) {
-          console.log(`      CSS: ${fix.css}`);
+          console.error(`      CSS: ${fix.css}`);
         }
       });
     }
 
-    console.log(`=======================================\n`);
+    console.error(`=======================================\n`);
   }
 
   private generateRecommendations(result: AnalysisResult): string[] {
@@ -390,7 +390,7 @@ class PixelPolishAIAgent {
   }
 
   private async applyAutomaticFixes(event: FileChangeEvent, fixes: any[]): Promise<void> {
-    console.log(`🛠️  Applying ${fixes.length} automatic fixes to ${event.fileName}...`);
+    console.error(`🛠️  Applying ${fixes.length} automatic fixes to ${event.fileName}...`);
 
     try {
       const filePath = event.filePath;
@@ -415,8 +415,8 @@ class PixelPolishAIAgent {
         // Write modified content
         await writeFile(filePath, modifiedContent);
         
-        console.log(`✅ Applied ${cssFixes.length} fixes to ${event.fileName}`);
-        console.log(`💾 Backup saved as ${event.fileName}.backup`);
+        console.error(`✅ Applied ${cssFixes.length} fixes to ${event.fileName}`);
+        console.error(`💾 Backup saved as ${event.fileName}.backup`);
       }
 
     } catch (error) {
@@ -430,7 +430,7 @@ class PixelPolishAIAgent {
   private async ensureLocalServer(): Promise<void> {
     if (this.localServer && !this.localServer.killed) return;
 
-    console.log(`🌐 Starting local server on port ${this.config.localServerPort}...`);
+    console.error(`🌐 Starting local server on port ${this.config.localServerPort}...`);
 
     this.localServer = spawn('npx', ['http-server', this.config.watchDirectory, '-p', this.config.localServerPort.toString(), '--silent'], {
       stdio: 'inherit'
@@ -444,7 +444,7 @@ class PixelPolishAIAgent {
     if (this.localServer) {
       this.localServer.kill();
       this.localServer = null;
-      console.log('🛑 Local server stopped');
+      console.error('🛑 Local server stopped');
     }
   }
 
@@ -452,7 +452,7 @@ class PixelPolishAIAgent {
     if (this.mcpProcess) {
       this.mcpProcess.kill();
       this.mcpProcess = null;
-      console.log('🛑 MCP server stopped');
+      console.error('🛑 MCP server stopped');
     }
   }
 
@@ -460,27 +460,27 @@ class PixelPolishAIAgent {
    * Start the complete AI agent system
    */
   async start(): Promise<void> {
-    console.log('🚀 Starting PixelPolish AI Agent...');
-    console.log(`📂 Watching: ${this.config.watchDirectory}`);
-    console.log(`💾 Output: ${this.config.outputDirectory}`);
-    console.log(`🔧 Auto-fix: ${this.config.autoFix ? 'enabled' : 'disabled'}`);
+    console.error('🚀 Starting PixelPolish AI Agent...');
+    console.error(`📂 Watching: ${this.config.watchDirectory}`);
+    console.error(`💾 Output: ${this.config.outputDirectory}`);
+    console.error(`🔧 Auto-fix: ${this.config.autoFix ? 'enabled' : 'disabled'}`);
     
     // Ensure directories exist
     if (!existsSync(this.config.watchDirectory)) {
       await mkdir(this.config.watchDirectory, { recursive: true });
-      console.log(`📁 Created watch directory: ${this.config.watchDirectory}`);
+      console.error(`📁 Created watch directory: ${this.config.watchDirectory}`);
     }
 
     if (!existsSync(this.config.outputDirectory)) {
       await mkdir(this.config.outputDirectory, { recursive: true });
-      console.log(`📁 Created output directory: ${this.config.outputDirectory}`);
+      console.error(`📁 Created output directory: ${this.config.outputDirectory}`);
     }
 
     // Start all components
     this.startFileWatcher();
     
-    console.log('✅ AI Agent is ready and watching for file changes!');
-    console.log('📝 Edit any HTML, CSS, or JS files to trigger analysis...\n');
+    console.error('✅ AI Agent is ready and watching for file changes!');
+    console.error('📝 Edit any HTML, CSS, or JS files to trigger analysis...\n');
   }
 }
 
@@ -508,7 +508,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         config.analysisDelay = parseInt(args[++i]);
         break;
       case '--help':
-        console.log(`
+        console.error(`
 PixelPolish AI Agent - Complete File Watching & Analysis System
 
 Usage: node dist/client-agent.js [options]
@@ -522,9 +522,9 @@ Options:
   --help                Show this help message
 
 Features:
-  🔍 File Watcher       - Monitors HTML, CSS, JS files for changes
+  �� File Watcher       - Monitors HTML, CSS, JS files for changes
   🌐 Page Analyzer      - Launches local server and headless browser
-  📊 Heuristic Engine   - 190-point design quality scoring
+  �� Heuristic Engine   - 190-point design quality scoring
   🤖 MCP Integration    - Communicates with MCP server for AI analysis
   🔧 Response Handler   - Saves reports and optionally applies fixes
 
