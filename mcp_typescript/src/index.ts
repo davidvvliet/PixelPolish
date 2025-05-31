@@ -19,6 +19,8 @@ import { HeuristicsEngineService } from './heuristics-engine.js';
 import { ScreenshotService } from './screenshot.js';
 import { AIAnalyzer } from './analyzer.js';
 import type { ComprehensiveAnalysis } from './types.js';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 class PixelPolishMCPServer {
   private server: Server;
@@ -45,7 +47,13 @@ class PixelPolishMCPServer {
     this.domCapture = new DOMCaptureService();
     this.cssExtractor = new CSSExtractorService();
     this.heuristicsEngine = new HeuristicsEngineService();
-    this.screenshotService = new ScreenshotService('./screenshots');
+    
+    // Get the directory of the current module and create screenshots path
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const screenshotsPath = join(__dirname, '..', 'screenshots');
+    
+    this.screenshotService = new ScreenshotService(screenshotsPath);
     this.aiAnalyzer = new AIAnalyzer(process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'openai');
 
     this.setupToolHandlers();
@@ -293,4 +301,4 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
 }
 
 const server = new PixelPolishMCPServer();
-server.run().catch(console.error); 
+server.run().catch(console.error);
