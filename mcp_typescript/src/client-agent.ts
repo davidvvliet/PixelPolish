@@ -10,6 +10,7 @@
  * 5. Response Handler - Applies or shows fixes
  */
 
+import 'dotenv/config';
 import chokidar from 'chokidar';
 import { spawn, ChildProcess } from 'child_process';
 import { join, resolve, extname } from 'path';
@@ -160,9 +161,6 @@ class PixelPolishAIAgent {
       // Build local URL
       const localUrl = `http://localhost:${this.config.localServerPort}/${event.fileName}`;
 
-      // Start MCP server if needed
-      await this.ensureMCPServer();
-
       // Call MCP server for analysis
       const result = await this.callMCPAnalysis(localUrl, event.fileName);
 
@@ -179,119 +177,87 @@ class PixelPolishAIAgent {
    */
   
   /**
-   * 4. MCP CLIENT - Communicates with MCP server
+   * 4. MCP CLIENT - Direct analysis instead of MCP communication
    */
-  private async ensureMCPServer(): Promise<void> {
-    if (this.mcpProcess && !this.mcpProcess.killed) return;
-
-    console.error('🤖 Starting MCP server...');
-
-    this.mcpProcess = spawn('npm', ['start'], {
-      cwd: resolve('.'),
-      stdio: ['pipe', 'pipe', 'inherit']
-    });
-
-    // Wait for server to be ready
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-
   private async callMCPAnalysis(url: string, filename: string): Promise<AnalysisResult> {
-    if (!this.mcpProcess) {
-      throw new Error('MCP server not running');
-    }
+    console.log(`🔍 Starting analysis of: ${url}`);
 
-    return new Promise((resolve, reject) => {
-      const request = {
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'tools/call',
-        params: {
-          name: 'analyze_url',
-          arguments: {
-            url,
-            include_screenshot: true,
-            ai_provider: process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'openai'
-          }
-        }
+    try {
+      // Import analysis services directly
+      const { DOMCaptureService } = await import('./dom-capture.js');
+      const { CSSExtractorService } = await import('./css-extractor.js');
+      const { HeuristicsEngineService } = await import('./heuristics-engine.js');
+      const { ScreenshotService } = await import('./screenshot.js');
+      const { AIAnalyzer } = await import('./analyzer.js');
+
+      // Initialize services
+      const domCapture = new DOMCaptureService();
+      const cssExtractor = new CSSExtractorService();
+      const heuristicsEngine = new HeuristicsEngineService();
+      const screenshotService = new ScreenshotService('./screenshots');
+      const aiAnalyzer = new AIAnalyzer(process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'openai');
+
+      // Step 1: Capture DOM structure
+      const domData = await domCapture.capture(url);
+
+      // Step 2: Extract CSS patterns
+      const cssData = await cssExtractor.extract(domData.elements);
+
+      // Step 3: Run heuristics analysis
+      const technicalAnalysis = await heuristicsEngine.analyze(domData, cssData);
+
+      // Step 4: Take screenshot
+      await screenshotService.initialize();
+      const screenshotResult = await screenshotService.takeScreenshot(url, filename);
+
+      let visualAnalysis = null;
+      if (screenshotResult.success) {
+        // Step 5: AI visual analysis
+        visualAnalysis = await aiAnalyzer.analyzeScreenshot(
+          screenshotResult.screenshotBase64,
+          { success: true, data: { dom: domData, css: cssData, analysis: technicalAnalysis } }
+        );
+      }
+
+      // Combine results
+      const combinedScore = visualAnalysis
+        ? Math.round((technicalAnalysis.scorePercentage * 0.6) + (visualAnalysis.visual_score * 0.4))
+        : technicalAnalysis.scorePercentage;
+
+      // Clean up
+      await screenshotService.close();
+
+      return {
+        success: true,
+        score: combinedScore,
+        issues: technicalAnalysis.issues.map(issue => ({
+          description: `[${issue.severity.toUpperCase()}] ${issue.message}`,
+          severity: issue.severity
+        })),
+        fixes: visualAnalysis?.priority_fixes.map(fix => ({
+          description: `[${fix.priority.toUpperCase()}] ${fix.element}: ${fix.issue}`,
+          css: fix.css_change || '',
+          priority: fix.priority
+        })) || []
       };
 
-      let responseData = '';
-
-      const timeout = setTimeout(() => {
-        reject(new Error('MCP analysis timeout'));
-      }, 30000);
-
-      this.mcpProcess!.stdout!.on('data', (data) => {
-        responseData += data.toString();
-        
-        try {
-          const response = JSON.parse(responseData);
-          clearTimeout(timeout);
-          
-          if (response.error) {
-            reject(new Error(response.error.message));
-          } else {
-            resolve({
-              success: true,
-              score: this.extractScore(response.result?.content?.[0]?.text),
-              issues: this.extractIssues(response.result?.content?.[0]?.text),
-              fixes: this.extractFixes(response.result?.content?.[0]?.text)
-            });
-          }
-        } catch (e) {
-          // Response might be incomplete, wait for more data
-        }
-      });
-
-      this.mcpProcess!.stdin!.write(JSON.stringify(request) + '\n');
-    });
+    } catch (error) {
+      console.error('❌ Direct analysis failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Analysis failed'
+      };
+    }
   }
 
-  private extractScore(text: string): number {
-    const scoreMatch = text?.match(/Combined Score:\s*(\d+)%/);
-    return scoreMatch ? parseInt(scoreMatch[1]) : 0;
+  private async ensureMCPServer(): Promise<void> {
+    // No longer needed - we call services directly
+    return;
   }
 
-  private extractIssues(text: string): any[] {
-    const issuesSection = text?.match(/### Top Issues:(.*?)(?=###|$)/s);
-    if (!issuesSection) return [];
-
-    return issuesSection[1]
-      .split('\n')
-      .filter(line => line.trim().match(/^\d+\./))
-      .map(line => ({
-        description: line.trim(),
-        severity: this.extractSeverity(line)
-      }));
-  }
-
-  private extractFixes(text: string): any[] {
-    const fixesSection = text?.match(/### Priority Fixes:(.*?)(?=###|$)/s);
-    if (!fixesSection) return [];
-
-    return fixesSection[1]
-      .split('\n')
-      .filter(line => line.trim().match(/^\d+\./))
-      .map(line => ({
-        description: line.trim(),
-        css: this.extractCSS(line),
-        priority: this.extractPriority(line)
-      }));
-  }
-
-  private extractSeverity(text: string): string {
-    const match = text.match(/\[(CRITICAL|HIGH|MEDIUM|LOW)\]/);
-    return match ? match[1].toLowerCase() : 'medium';
-  }
-
-  private extractPriority(text: string): string {
-    const match = text.match(/\[(CRITICAL|HIGH|MEDIUM|LOW)\]/);
-    return match ? match[1].toLowerCase() : 'medium';
-  }
-
-  private extractCSS(text: string): string {
-    const match = text.match(/CSS:\s*`([^`]+)`/);
-    return match ? match[1] : '';
+  private async stopMCPServer(): Promise<void> {
+    // No longer needed - we call services directly
+    return;
   }
 
   /**
@@ -445,14 +411,6 @@ class PixelPolishAIAgent {
       this.localServer.kill();
       this.localServer = null;
       console.error('🛑 Local server stopped');
-    }
-  }
-
-  private async stopMCPServer(): Promise<void> {
-    if (this.mcpProcess) {
-      this.mcpProcess.kill();
-      this.mcpProcess = null;
-      console.error('🛑 MCP server stopped');
     }
   }
 

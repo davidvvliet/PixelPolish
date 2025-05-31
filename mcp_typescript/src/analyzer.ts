@@ -47,7 +47,7 @@ export class AIAnalyzer {
     const issuesCount = technicalData.data?.analysis?.issues?.length || 0;
 
     const response = await client.chat.completions.create({
-      model: "gpt-4-vision-preview",
+      model: "gpt-4o",
       max_tokens: 1500,
       messages: [
         {
