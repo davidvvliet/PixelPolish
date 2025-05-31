@@ -21,6 +21,9 @@ import { AIAnalyzer } from './analyzer.js';
 import type { ComprehensiveAnalysis } from './types.js';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { createServer } from 'http';
+import { readFileSync, existsSync } from 'fs';
+import { extname } from 'path';
 
 class PixelPolishMCPServer {
   private server: Server;
@@ -29,6 +32,7 @@ class PixelPolishMCPServer {
   private heuristicsEngine: HeuristicsEngineService;
   private screenshotService: ScreenshotService;
   private aiAnalyzer: AIAnalyzer;
+  private httpServer: any = null;
 
   constructor() {
     this.server = new Server(
@@ -57,6 +61,27 @@ class PixelPolishMCPServer {
     this.aiAnalyzer = new AIAnalyzer(process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'openai');
 
     this.setupToolHandlers();
+  }
+
+  private getContentType(filePath: string): string {
+    const ext = extname(filePath).toLowerCase();
+    const contentTypes: { [key: string]: string } = {
+      '.html': 'text/html',
+      '.js': 'application/javascript',
+      '.css': 'text/css',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon',
+      '.woff': 'font/woff',
+      '.woff2': 'font/woff2',
+      '.ttf': 'font/ttf',
+      '.eot': 'application/vnd.ms-fontobject'
+    };
+    return contentTypes[ext] || 'application/octet-stream';
   }
 
   private setupToolHandlers(): void {
@@ -111,6 +136,27 @@ class PixelPolishMCPServer {
               required: ['url'],
             },
           },
+          {
+            name: 'serve_vite_app',
+            description: 'Serve the built UI Portal application from dist directory',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                port: { type: 'number', description: 'Port to serve on', default: 8080 },
+                dist_path: { type: 'string', description: 'Path to dist directory', default: '/Users/earlpotters/Documents/ai-projects/PixelPolish/ui-portal/dist' },
+              },
+              required: [],
+            },
+          },
+          {
+            name: 'stop_vite_app',
+            description: 'Stop the running HTTP server',
+            inputSchema: {
+              type: 'object',
+              properties: {},
+              required: [],
+            },
+          },
         ],
       };
     });
@@ -129,6 +175,10 @@ class PixelPolishMCPServer {
             return await this.handleAnalyzeDomStructure(args);
           case 'run_heuristics_analysis':
             return await this.handleRunHeuristicsAnalysis(args);
+          case 'serve_vite_app':
+            return await this.handleServeViteApp(args);
+          case 'stop_vite_app':
+            return await this.handleStopViteApp(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -291,6 +341,172 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
 `;
 
     return { content: [{ type: "text", text: resultText }] };
+  }
+
+  private async handleServeViteApp(args: any) {
+    const { 
+      port = 8080,
+      dist_path = '/Users/earlpotters/Documents/ai-projects/PixelPolish/ui-portal/dist'
+    } = args;
+
+    // Check if server is already running
+    if (this.httpServer) {
+      const serverPort = this.httpServer.address()?.port;
+      return {
+        content: [{ 
+          type: "text", 
+          text: `❌ HTTP server is already running on port ${serverPort}. Use stop_vite_app to stop it first.` 
+        }]
+      };
+    }
+
+    // Check if dist directory exists
+    if (!existsSync(dist_path)) {
+      throw new McpError(
+        ErrorCode.InvalidParams, 
+        `Dist directory not found: ${dist_path}. Make sure the UI Portal has been built.`
+      );
+    }
+
+    // Check if index.html exists
+    const indexPath = join(dist_path, 'index.html');
+    if (!existsSync(indexPath)) {
+      throw new McpError(
+        ErrorCode.InvalidParams, 
+        `index.html not found in: ${dist_path}. Make sure the build is complete.`
+      );
+    }
+
+    try {
+      console.error(`🚀 Starting HTTP server for UI Portal at: ${dist_path}`);
+
+      // Create HTTP server
+      this.httpServer = createServer((req, res) => {
+        // Add CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+        // Handle preflight requests
+        if (req.method === 'OPTIONS') {
+          res.writeHead(200);
+          res.end();
+          return;
+        }
+
+        let filePath = req.url === '/' ? '/index.html' : req.url || '/index.html';
+        
+        // Remove query parameters
+        filePath = filePath.split('?')[0];
+        
+        // Security: prevent directory traversal
+        if (filePath.includes('..')) {
+          res.writeHead(403);
+          res.end('Forbidden');
+          return;
+        }
+
+        const fullPath = join(dist_path, filePath);
+
+        try {
+          if (existsSync(fullPath)) {
+            const content = readFileSync(fullPath);
+            const contentType = this.getContentType(fullPath);
+            
+            res.setHeader('Content-Type', contentType);
+            res.writeHead(200);
+            res.end(content);
+          } else {
+            // For SPA routing, serve index.html for routes that don't exist
+            const indexContent = readFileSync(indexPath);
+            res.setHeader('Content-Type', 'text/html');
+            res.writeHead(200);
+            res.end(indexContent);
+          }
+        } catch (fileError) {
+          console.error('File read error:', fileError);
+          res.writeHead(500);
+          res.end('Internal Server Error');
+        }
+      });
+
+      // Start listening
+      await new Promise<void>((resolve, reject) => {
+        this.httpServer!.listen(port, (err: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+
+      const serverUrl = `http://localhost:${port}`;
+      console.error(`✅ Server started at ${serverUrl}`);
+
+      const resultText = `✅ UI Portal is now serving!
+
+🌐 **Server URL:** ${serverUrl}
+📁 **Serving from:** ${dist_path}
+⚡ **Port:** ${port}
+📄 **Index file:** ${indexPath}
+
+The UI Portal application is now accessible in your browser.
+CORS is enabled for development purposes.
+SPA routing is supported - all routes will serve index.html.
+
+**Quick Actions:**
+- Open ${serverUrl} in your browser
+- Use \`stop_vite_app\` tool to stop the server
+- The server will serve all static assets from the dist directory`;
+
+      return { content: [{ type: "text", text: resultText }] };
+
+    } catch (error) {
+      // Clean up on error
+      if (this.httpServer) {
+        this.httpServer.close();
+        this.httpServer = null;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError, 
+        `Failed to start HTTP server: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  private async handleStopViteApp(args: any) {
+    if (!this.httpServer) {
+      return {
+        content: [{ 
+          type: "text", 
+          text: `❌ No HTTP server is currently running.` 
+        }]
+      };
+    }
+
+    try {
+      await new Promise<void>((resolve) => {
+        this.httpServer!.close(() => {
+          resolve();
+        });
+      });
+      
+      this.httpServer = null;
+      
+      return {
+        content: [{ 
+          type: "text", 
+          text: `✅ HTTP server has been stopped.` 
+        }]
+      };
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InternalError, 
+        `Failed to stop HTTP server: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 
   async run(): Promise<void> {
