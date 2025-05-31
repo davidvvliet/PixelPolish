@@ -8,12 +8,12 @@ to identify issues, suggest fixes, and recommend improvements.
 
 import base64
 import os
-from typing import Any
+from typing import Any, Annotated
 
 import google.generativeai as genai
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.utilities.types import Image
+from pydantic import Field
 
 # Load environment variables from .env file
 load_dotenv()
@@ -52,15 +52,17 @@ def encode_image_for_gemini(image_data: bytes, format: str) -> dict[str, Any]:
 
 @mcp.tool()
 async def analyze_ui_image(
-    image: Image,
-    analysis_focus: str = "general",
-    detail_level: str = "detailed"
+    image_data: Annotated[str, Field(description="Base64-encoded image data")],
+    image_format: Annotated[str, Field(description="Image format (e.g., 'png', 'jpeg', 'jpg')")] = "png",
+    analysis_focus: Annotated[str, Field(description="Focus area: 'general', 'accessibility', 'usability', 'design', 'mobile'")] = "general",
+    detail_level: Annotated[str, Field(description="Detail level: 'brief', 'detailed', 'comprehensive'")] = "detailed"
 ) -> str:
     """
     Analyze a UI image using Gemini AI to identify issues, fixes, and improvements.
     
     Args:
-        image: The UI image to analyze
+        image_data: Base64-encoded image data
+        image_format: Image format (png, jpeg, jpg, gif, webp)
         analysis_focus: Focus area - 'general', 'accessibility', 'usability', 'design', 'mobile'
         detail_level: Level of detail - 'brief', 'detailed', 'comprehensive'
     
@@ -68,12 +70,25 @@ async def analyze_ui_image(
         Detailed analysis of the UI with issues, fixes, and improvements
     """
     
+    print(f"🔍 DEBUG: analyze_ui_image called with format={image_format}, focus={analysis_focus}, detail={detail_level}")
+    print(f"🔍 DEBUG: Image data length: {len(image_data)} characters")
+    
     if not os.getenv("GEMINI_API_KEY"):
+        print("❌ DEBUG: GEMINI_API_KEY not found in environment variables")
         return "Error: GEMINI_API_KEY environment variable not set. Please set your Gemini API key."
     
+    print("✅ DEBUG: GEMINI_API_KEY found")
+    
     try:
+        print("🔍 DEBUG: Starting image decode process...")
+        # Decode the base64 image data
+        image_bytes = base64.b64decode(image_data)
+        print(f"✅ DEBUG: Successfully decoded image, size: {len(image_bytes)} bytes")
+        
         # Prepare the image for Gemini
-        image_part = encode_image_for_gemini(image.data, image.format)
+        print("🔍 DEBUG: Preparing image for Gemini API...")
+        image_part = encode_image_for_gemini(image_bytes, image_format)
+        print(f"✅ DEBUG: Image prepared with MIME type: {image_part['mime_type']}")
         
         # Create analysis prompt based on focus and detail level
         focus_prompts = {
@@ -92,6 +107,9 @@ async def analyze_ui_image(
         
         base_prompt = focus_prompts.get(analysis_focus, focus_prompts["general"])
         detail_instruction = detail_instructions.get(detail_level, detail_instructions["detailed"])
+        
+        print(f"🔍 DEBUG: Using focus prompt: '{base_prompt}'")
+        print(f"🔍 DEBUG: Using detail level: '{detail_instruction}'")
         
         prompt = f"""
         {base_prompt}. {detail_instruction}.
@@ -118,35 +136,57 @@ async def analyze_ui_image(
         Focus on practical, implementable feedback that a developer or designer could act upon.
         """
         
+        print("🔍 DEBUG: Sending request to Gemini API...")
         # Generate content using Gemini
         response = model.generate_content([prompt, image_part])
+        print("✅ DEBUG: Received response from Gemini API")
         
         if not response.text:
+            print("❌ DEBUG: Gemini API returned empty response")
             return "Error: Gemini API returned an empty response. The image might not be processable."
-            
+        
+        print(f"✅ DEBUG: Analysis complete, response length: {len(response.text)} characters")
         return response.text
         
     except Exception as e:
+        print(f"❌ DEBUG: Exception occurred in analyze_ui_image: {str(e)}")
         return f"Error analyzing image: {str(e)}"
 
 
 @mcp.tool()
-async def quick_ui_check(image: Image) -> str:
+async def quick_ui_check(
+    image_data: Annotated[str, Field(description="Base64-encoded image data")],
+    image_format: Annotated[str, Field(description="Image format (e.g., 'png', 'jpeg', 'jpg')")] = "png"
+) -> str:
     """
     Perform a quick UI check focusing on the most critical issues.
     
     Args:
-        image: The UI image to analyze
+        image_data: Base64-encoded image data
+        image_format: Image format (png, jpeg, jpg, gif, webp)
     
     Returns:
         Brief summary of critical issues and quick wins
     """
     
+    print(f"⚡ DEBUG: quick_ui_check called with format={image_format}")
+    print(f"⚡ DEBUG: Image data length: {len(image_data)} characters")
+    
     if not os.getenv("GEMINI_API_KEY"):
+        print("❌ DEBUG: GEMINI_API_KEY not found in environment variables")
         return "Error: GEMINI_API_KEY environment variable not set."
     
+    print("✅ DEBUG: GEMINI_API_KEY found")
+    
     try:
-        image_part = encode_image_for_gemini(image.data, image.format)
+        print("⚡ DEBUG: Starting quick check image decode...")
+        # Decode the base64 image data
+        image_bytes = base64.b64decode(image_data)
+        print(f"✅ DEBUG: Successfully decoded image, size: {len(image_bytes)} bytes")
+        
+        print("⚡ DEBUG: Preparing image for Gemini API...")
+        image_part = encode_image_for_gemini(image_bytes, image_format)
+        print(f"✅ DEBUG: Image prepared with MIME type: {image_part['mime_type']}")
         
         prompt = """
         Perform a rapid UI assessment of this interface. Provide:
@@ -166,10 +206,16 @@ async def quick_ui_check(image: Image) -> str:
         Keep it concise but actionable. Focus on high-impact, easy-to-fix issues.
         """
         
+        print("⚡ DEBUG: Sending quick check request to Gemini API...")
         response = model.generate_content([prompt, image_part])
-        return response.text or "Error: Could not analyze the image."
+        print("✅ DEBUG: Received quick check response from Gemini API")
+        
+        result = response.text or "Error: Could not analyze the image."
+        print(f"✅ DEBUG: Quick check complete, response length: {len(result)} characters")
+        return result
         
     except Exception as e:
+        print(f"❌ DEBUG: Exception occurred in quick_ui_check: {str(e)}")
         return f"Error in quick check: {str(e)}"
 
 
@@ -184,6 +230,7 @@ def ui_analysis_guidelines() -> str:
     - Capture full page layouts when possible
     - Include different screen states (hover, focus, error states)
     - Test on multiple devices/screen sizes
+    - Encode images as base64 strings before submitting
 
     ## Analysis Focus Areas:
     - **General**: Comprehensive overview of all aspects
@@ -205,6 +252,12 @@ def ui_analysis_guidelines() -> str:
     - Test fixes with real users when possible
     - Maintain design system consistency
     - Consider performance implications
+
+    ## Image Encoding:
+    To encode an image as base64, you can use:
+    - JavaScript: `btoa()` function or FileReader API
+    - Python: `base64.b64encode(image_bytes).decode()`
+    - Command line: `base64 -i image.png`
     """
 
 
