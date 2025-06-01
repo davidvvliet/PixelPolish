@@ -13,10 +13,8 @@ When the user mentions "pixelpolish", "ui analysis", "serve ui portal", or reque
 **FIRST STEP:** Before calling any MCP tools, start the static website server using Cursor's terminal:
 
 ```bash
-npx serve -l 8081 /Users/earlpotters/Documents/ai-projects/PixelPolish/static_website &
+npx serve -l 8081 /Users/earlpotters/Documents/ai-projects/PixelPolish/static_website
 ```
-
-The `&` runs the server in the background, allowing the terminal to return immediately. **Wait for confirmation** that the server is running on `http://localhost:8081` before proceeding to step 1.
 
 ### 1. UI Portal Server Setup
 ```
