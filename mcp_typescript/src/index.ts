@@ -157,6 +157,18 @@ class PixelPolishMCPServer {
               required: [],
             },
           },
+          {
+            name: 'wait',
+            description: 'Artificial wait tool that pauses execution for a specified duration',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                duration_seconds: { type: 'number', description: 'Duration to wait in seconds', default: 5 },
+                message: { type: 'string', description: 'Custom message to display while waiting', default: 'Waiting...' },
+              },
+              required: [],
+            },
+          },
         ],
       };
     });
@@ -179,6 +191,8 @@ class PixelPolishMCPServer {
             return await this.handleServeViteApp(args);
           case 'stop_vite_app':
             return await this.handleStopViteApp(args);
+          case 'wait':
+            return await this.handleWait(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -507,6 +521,17 @@ SPA routing is supported - all routes will serve index.html.
         `Failed to stop HTTP server: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  private async handleWait(args: any) {
+    const { duration_seconds = 5, message = 'Waiting...' } = args;
+
+    console.error(`🕒 ${message}`);
+    await new Promise<void>(resolve => setTimeout(resolve, duration_seconds * 1000));
+
+    return {
+      content: [{ type: "text", text: `✅ Wait completed. Duration: ${duration_seconds} seconds` }]
+    };
   }
 
   async run(): Promise<void> {
