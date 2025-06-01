@@ -1,6 +1,13 @@
 import './style.css'
 import pixelPolishLogo from '/pixelpolish-logo.webp'
 
+// Get URL from query parameters or use default
+function getTargetUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetUrl = urlParams.get('url');
+  return targetUrl || 'http://localhost:8081/landing-page';
+}
+
 document.querySelector('#app').innerHTML = `
   <div>
     <div class="header">
@@ -78,6 +85,7 @@ document.querySelector('#app').innerHTML = `
             <div class="button-group">
               <button class="action-btn" onclick="generateDynamicControls()">Generate Controls</button>
             </div>
+            <div id="generatedControls"></div>
           </div>
         </div>
 
@@ -110,11 +118,11 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="./landing-page.html" 
+          src="${getTargetUrl()}" 
           width="900" 
           height="700" 
           frameborder="0"
-          title="PixelPolish Landing Page">
+          title="Target Website">
         </iframe>
       </div>
     </div>
@@ -217,9 +225,13 @@ function applySavedState() {
   isRestoring = false;
 }
 
-// Clear all saved state
-window.clearSavedState = function() {
-  if (confirm('Are you sure you want to clear all saved changes? This will reset everything to the original state.')) {
+// Enhanced clear saved state function with optional confirmation
+function clearSavedState(showConfirmation = true) {
+  const shouldClear = showConfirmation ? 
+    confirm('Are you sure you want to clear all saved changes? This will reset everything to the original state.') : 
+    true;
+    
+  if (shouldClear) {
     localStorage.removeItem('pixelpolish-state');
     savedState = {
       textChanges: {},
@@ -230,8 +242,18 @@ window.clearSavedState = function() {
     };
     hiddenElements = [];
     updateHiddenElementsList();
-    location.reload(); // Reload to reset everything
+    
+    if (showConfirmation) {
+      location.reload(); // Only reload if this was a manual clear
+    }
   }
+  
+  return shouldClear;
+}
+
+// Clear all saved state
+window.clearSavedState = function() {
+  clearSavedState(true); // Use the enhanced function with confirmation
 }
 
 // Enhanced sendMessageToIframe that saves state
@@ -284,6 +306,213 @@ function saveChangeToState(data) {
   }
   
   saveCurrentState();
+}
+
+// Submit to MCP Server function
+window.submitToMCP = async function() {
+  // Dynamically use the current port for the MCP endpoint
+  const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+  const endpoint = `${window.location.protocol}//${window.location.hostname}:${currentPort}/api/submit`;
+  
+  // Prepare the comprehensive payload for LLM processing
+  const payload = {
+    timestamp: new Date().toISOString(),
+    url: document.getElementById('targetIframe').src,
+    
+    // Raw changes data (exactly like the export JSON)
+    changes: {
+      textChanges: savedState.textChanges,
+      styleChanges: savedState.styleChanges,
+      htmlChanges: savedState.htmlChanges,
+      classChanges: savedState.classChanges,
+      hiddenElements: savedState.hiddenElements
+    },
+    
+    // Detailed descriptions for LLM understanding
+    changeDescriptions: generateDetailedDescriptions(),
+    
+    // Summary statistics
+    summary: generateChangeSummary(),
+    
+    // Context about the page being modified
+    pageContext: {
+      title: 'PixelPolish Landing Page',
+      type: 'landing-page',
+      mainElements: [
+        { selector: '.hero h1', type: 'heading', description: 'Main hero title' },
+        { selector: '.hero p', type: 'text', description: 'Hero description paragraph' },
+        { selector: '.cta-button', type: 'button', description: 'Call-to-action buttons' },
+        { selector: '.section-title', type: 'heading', description: 'Section titles' },
+        { selector: '.feature-card h3', type: 'heading', description: 'Feature card titles' },
+        { selector: '.feature-card p', type: 'text', description: 'Feature descriptions' },
+        { selector: '.demo-text h2', type: 'heading', description: 'Demo section title' },
+        { selector: '.demo-text p', type: 'text', description: 'Demo description paragraphs' },
+        { selector: '.footer', type: 'container', description: 'Footer section' }
+      ]
+    },
+    
+    // Actionable instructions for LLM
+    instructions: generateLLMInstructions()
+  };
+  
+  try {
+    updateStatus('Submitting detailed changes to MCP server...', true);
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload, null, 2)
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      updateStatus(`Successfully submitted to MCP server! Response: ${result.message || 'OK'}`, true);
+    } else {
+      const errorText = await response.text();
+      updateStatus(`MCP server error (${response.status}): ${errorText}`, false);
+    }
+  } catch (error) {
+    updateStatus(`Failed to connect to MCP server: ${error.message}`, false);
+  }
+}
+
+// Generate detailed descriptions for each change type
+function generateDetailedDescriptions() {
+  const descriptions = {
+    textModifications: [],
+    styleModifications: [],
+    contentModifications: [],
+    classModifications: [],
+    hiddenElements: [],
+    overallEffect: ""
+  };
+  
+  // Text changes descriptions
+  Object.keys(savedState.textChanges).forEach(selector => {
+    descriptions.textModifications.push({
+      selector: selector,
+      newText: savedState.textChanges[selector],
+      action: `Changed text content of "${selector}" to "${savedState.textChanges[selector]}"`
+    });
+  });
+  
+  // Style changes descriptions
+  Object.keys(savedState.styleChanges).forEach(selector => {
+    Object.keys(savedState.styleChanges[selector]).forEach(property => {
+      const value = savedState.styleChanges[selector][property];
+      descriptions.styleModifications.push({
+        selector: selector,
+        property: property,
+        value: value,
+        action: `Applied CSS style "${property}: ${value}" to "${selector}"`
+      });
+    });
+  });
+  
+  // HTML changes descriptions
+  Object.keys(savedState.htmlChanges).forEach(selector => {
+    descriptions.contentModifications.push({
+      selector: selector,
+      newHTML: savedState.htmlChanges[selector],
+      action: `Replaced HTML content of "${selector}" with custom HTML`
+    });
+  });
+  
+  // Class changes descriptions
+  Object.keys(savedState.classChanges).forEach(selector => {
+    savedState.classChanges[selector].forEach(className => {
+      descriptions.classModifications.push({
+        selector: selector,
+        className: className,
+        action: `Added CSS class "${className}" to "${selector}"`
+      });
+    });
+  });
+  
+  // Hidden elements descriptions
+  savedState.hiddenElements.forEach(element => {
+    descriptions.hiddenElements.push({
+      selector: element.selector,
+      elementType: element.tagName,
+      action: `Hidden element "${element.selector}" (${element.tagName})`
+    });
+  });
+  
+  // Generate overall effect description
+  const totalChanges = descriptions.textModifications.length + 
+                      descriptions.styleModifications.length + 
+                      descriptions.contentModifications.length + 
+                      descriptions.classModifications.length + 
+                      descriptions.hiddenElements.length;
+  
+  descriptions.overallEffect = `Applied ${totalChanges} total modifications to the webpage, including ${descriptions.textModifications.length} text changes, ${descriptions.styleModifications.length} style changes, ${descriptions.contentModifications.length} content replacements, ${descriptions.classModifications.length} class additions, and ${descriptions.hiddenElements.length} hidden elements.`;
+  
+  return descriptions;
+}
+
+// Generate LLM-friendly instructions
+function generateLLMInstructions() {
+  const instructions = {
+    purpose: "These changes represent DOM modifications made through the PixelPolish interface",
+    howToUse: "Use this data to understand what changes were applied and potentially recreate or modify them",
+    changeTypes: {
+      textChanges: "Direct text content replacements - apply these by setting element.textContent",
+      styleChanges: "CSS style modifications - apply these by setting element.style[property] = value",
+      htmlChanges: "HTML content replacements - apply these by setting element.innerHTML",
+      classChanges: "CSS class additions - apply these by using element.classList.add(className)",
+      hiddenElements: "Elements that were hidden - apply these by setting element.style.display = 'none'"
+    },
+    context: "All changes were made to an interactive demo page with standard HTML elements",
+    suggestedActions: generateSuggestedActions()
+  };
+  
+  return instructions;
+}
+
+function generateSuggestedActions() {
+  const actions = [];
+  
+  if (Object.keys(savedState.textChanges).length > 0) {
+    actions.push("Apply text modifications to update content messaging");
+  }
+  
+  if (Object.keys(savedState.styleChanges).length > 0) {
+    actions.push("Apply style changes to modify visual appearance");
+  }
+  
+  if (Object.keys(savedState.htmlChanges).length > 0) {
+    actions.push("Replace HTML content to add dynamic elements");
+  }
+  
+  if (Object.keys(savedState.classChanges).length > 0) {
+    actions.push("Add CSS classes for styling or behavioral changes");
+  }
+  
+  if (savedState.hiddenElements.length > 0) {
+    actions.push("Hide specified elements to modify page layout");
+  }
+  
+  return actions;
+}
+
+// Generate a summary of changes for the MCP server
+function generateChangeSummary() {
+  const summary = {
+    totalChanges: 0,
+    textChanges: Object.keys(savedState.textChanges).length,
+    styleChanges: Object.keys(savedState.styleChanges).length,
+    htmlChanges: Object.keys(savedState.htmlChanges).length,
+    classChanges: Object.keys(savedState.classChanges).length,
+    hiddenElements: savedState.hiddenElements.length
+  };
+  
+  summary.totalChanges = summary.textChanges + summary.styleChanges + 
+                        summary.htmlChanges + summary.classChanges + summary.hiddenElements;
+  
+  return summary;
 }
 
 // Wait for iframe to load
@@ -506,230 +735,6 @@ window.importState = function() {
   input.click();
 }
 
-// Submit to MCP Server function
-window.submitToMCP = async function() {
-  // Dynamically use the current port for the MCP endpoint
-  const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-  const endpoint = `${window.location.protocol}//${window.location.hostname}:${currentPort}/api/submit`;
-  
-  // Prepare the comprehensive payload for LLM processing
-  const payload = {
-    timestamp: new Date().toISOString(),
-    url: document.getElementById('targetIframe').src,
-    
-    // Raw changes data (exactly like the export JSON)
-    changes: {
-      textChanges: savedState.textChanges,
-      styleChanges: savedState.styleChanges,
-      htmlChanges: savedState.htmlChanges,
-      classChanges: savedState.classChanges,
-      hiddenElements: savedState.hiddenElements
-    },
-    
-    // Detailed descriptions for LLM understanding
-    changeDescriptions: generateDetailedDescriptions(),
-    
-    // Summary statistics
-    summary: generateChangeSummary(),
-    
-    // Context about the page being modified
-    pageContext: {
-      title: 'PixelPolish Landing Page',
-      type: 'landing-page',
-      mainElements: [
-        { selector: '.hero h1', type: 'heading', description: 'Main hero title' },
-        { selector: '.hero p', type: 'text', description: 'Hero description paragraph' },
-        { selector: '.cta-button', type: 'button', description: 'Call-to-action buttons' },
-        { selector: '.section-title', type: 'heading', description: 'Section titles' },
-        { selector: '.feature-card h3', type: 'heading', description: 'Feature card titles' },
-        { selector: '.feature-card p', type: 'text', description: 'Feature descriptions' },
-        { selector: '.demo-text h2', type: 'heading', description: 'Demo section title' },
-        { selector: '.demo-text p', type: 'text', description: 'Demo description paragraphs' },
-        { selector: '.footer', type: 'container', description: 'Footer section' }
-      ]
-    },
-    
-    // Actionable instructions for LLM
-    instructions: generateLLMInstructions()
-  };
-  
-  try {
-    updateStatus('Submitting detailed changes to MCP server...', true);
-    
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(payload, null, 2)
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      updateStatus(`Successfully submitted to MCP server! Response: ${result.message || 'OK'}`, true);
-    } else {
-      const errorText = await response.text();
-      updateStatus(`MCP server error (${response.status}): ${errorText}`, false);
-    }
-  } catch (error) {
-    updateStatus(`Failed to connect to MCP server: ${error.message}`, false);
-  }
-}
-
-// Generate detailed descriptions for each change type
-function generateDetailedDescriptions() {
-  const descriptions = {
-    textModifications: [],
-    styleModifications: [],
-    contentModifications: [],
-    classModifications: [],
-    hiddenElements: [],
-    overallEffect: ""
-  };
-  
-  // Text changes descriptions
-  Object.keys(savedState.textChanges).forEach(selector => {
-    descriptions.textModifications.push({
-      selector: selector,
-      newText: savedState.textChanges[selector],
-      action: `Changed text content of "${selector}" to "${savedState.textChanges[selector]}"`
-    });
-  });
-  
-  // Style changes descriptions
-  Object.keys(savedState.styleChanges).forEach(selector => {
-    Object.keys(savedState.styleChanges[selector]).forEach(property => {
-      const value = savedState.styleChanges[selector][property];
-      descriptions.styleModifications.push({
-        selector: selector,
-        property: property,
-        value: value,
-        action: `Applied CSS style "${property}: ${value}" to "${selector}"`
-      });
-    });
-  });
-  
-  // HTML changes descriptions
-  Object.keys(savedState.htmlChanges).forEach(selector => {
-    descriptions.contentModifications.push({
-      selector: selector,
-      newHTML: savedState.htmlChanges[selector],
-      action: `Replaced HTML content of "${selector}" with custom HTML`
-    });
-  });
-  
-  // Class changes descriptions
-  Object.keys(savedState.classChanges).forEach(selector => {
-    savedState.classChanges[selector].forEach(className => {
-      descriptions.classModifications.push({
-        selector: selector,
-        className: className,
-        action: `Added CSS class "${className}" to "${selector}"`
-      });
-    });
-  });
-  
-  // Hidden elements descriptions
-  savedState.hiddenElements.forEach(element => {
-    descriptions.hiddenElements.push({
-      selector: element.selector,
-      elementType: element.tagName,
-      action: `Hidden element "${element.selector}" (${element.tagName})`
-    });
-  });
-  
-  // Generate overall effect description
-  const totalChanges = descriptions.textModifications.length + 
-                      descriptions.styleModifications.length + 
-                      descriptions.contentModifications.length + 
-                      descriptions.classModifications.length + 
-                      descriptions.hiddenElements.length;
-  
-  descriptions.overallEffect = `Applied ${totalChanges} total modifications to the webpage, including ${descriptions.textModifications.length} text changes, ${descriptions.styleModifications.length} style changes, ${descriptions.contentModifications.length} content replacements, ${descriptions.classModifications.length} class additions, and ${descriptions.hiddenElements.length} hidden elements.`;
-  
-  return descriptions;
-}
-
-// Generate LLM-friendly instructions
-function generateLLMInstructions() {
-  const instructions = {
-    purpose: "These changes represent DOM modifications made through the PixelPolish interface",
-    howToUse: "Use this data to understand what changes were applied and potentially recreate or modify them",
-    changeTypes: {
-      textChanges: "Direct text content replacements - apply these by setting element.textContent",
-      styleChanges: "CSS style modifications - apply these by setting element.style[property] = value",
-      htmlChanges: "HTML content replacements - apply these by setting element.innerHTML",
-      classChanges: "CSS class additions - apply these by using element.classList.add(className)",
-      hiddenElements: "Elements that were hidden - apply these by setting element.style.display = 'none'"
-    },
-    context: "All changes were made to an interactive demo page with standard HTML elements",
-    suggestedActions: generateSuggestedActions()
-  };
-  
-  return instructions;
-}
-
-function generateSuggestedActions() {
-  const actions = [];
-  
-  if (Object.keys(savedState.textChanges).length > 0) {
-    actions.push("Apply text modifications to update content messaging");
-  }
-  
-  if (Object.keys(savedState.styleChanges).length > 0) {
-    actions.push("Apply style changes to modify visual appearance");
-  }
-  
-  if (Object.keys(savedState.htmlChanges).length > 0) {
-    actions.push("Replace HTML content to add dynamic elements");
-  }
-  
-  if (Object.keys(savedState.classChanges).length > 0) {
-    actions.push("Add CSS classes for styling or behavioral changes");
-  }
-  
-  if (savedState.hiddenElements.length > 0) {
-    actions.push("Hide specified elements to modify page layout");
-  }
-  
-  return actions;
-}
-
-// Generate a summary of changes for the MCP server
-function generateChangeSummary() {
-  const summary = {
-    totalChanges: 0,
-    textChanges: Object.keys(savedState.textChanges).length,
-    styleChanges: Object.keys(savedState.styleChanges).length,
-    htmlChanges: Object.keys(savedState.htmlChanges).length,
-    classChanges: Object.keys(savedState.classChanges).length,
-    hiddenElements: savedState.hiddenElements.length
-  };
-  
-  summary.totalChanges = summary.textChanges + summary.styleChanges + 
-                        summary.htmlChanges + summary.classChanges + summary.hiddenElements;
-  
-  return summary;
-}
-
-// Collapsible sections functionality
-window.toggleSection = function(sectionId) {
-  const content = document.getElementById(sectionId);
-  const header = content.parentElement.querySelector('.section-header');
-  const icon = header.querySelector('.toggle-icon');
-  
-  if (content.style.display === 'none') {
-    content.style.display = 'block';
-    icon.textContent = '▼';
-    header.classList.remove('collapsed');
-  } else {
-    content.style.display = 'none';
-    icon.textContent = '▶';
-    header.classList.add('collapsed');
-  }
-}
-
 // Request page analysis from iframe
 function generateDynamicControls() {
   if (targetIframe && targetIframe.contentWindow) {
@@ -884,143 +889,19 @@ window.togglePageAnimations = function() {
   });
 }
 
-// AI Assistant Function
-window.askAI = async function() {
-  if (!selectedElementInfo) {
-    updateAIStatus('Please select an element first', false);
-    return;
-  }
+// Collapsible sections functionality
+window.toggleSection = function(sectionId) {
+  const content = document.getElementById(sectionId);
+  const header = content.parentElement.querySelector('.section-header');
+  const icon = header.querySelector('.toggle-icon');
   
-  const request = document.getElementById('aiRequest').value.trim();
-  if (!request) {
-    updateAIStatus('Please enter a request', false);
-    return;
-  }
-  
-  updateAIStatus('Processing your request...', true);
-  
-  try {
-    // Process the natural language request
-    const actions = await processAIRequest(request, selectedElementInfo);
-    
-    if (actions.length === 0) {
-      updateAIStatus('Could not understand the request. Try being more specific.', false);
-      return;
-    }
-    
-    // Apply each action
-    for (const action of actions) {
-      sendMessageToIframe(action);
-    }
-    
-    updateAIStatus(`Applied ${actions.length} change(s) successfully!`, true);
-    document.getElementById('aiRequest').value = ''; // Clear input
-    
-  } catch (error) {
-    updateAIStatus(`Error: ${error.message}`, false);
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    icon.textContent = '▼';
+    header.classList.remove('collapsed');
+  } else {
+    content.style.display = 'none';
+    icon.textContent = '▶';
+    header.classList.add('collapsed');
   }
 }
-
-function updateAIStatus(message, success) {
-  const statusElement = document.getElementById('aiStatus');
-  statusElement.textContent = message;
-  statusElement.style.color = success ? '#28a745' : '#dc3545';
-}
-
-// Process natural language AI requests
-async function processAIRequest(request, elementInfo) {
-  // Hardcode your OpenAI API key here
-  const apiKey = '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'; // Replace with your actual API key
-  
-  if (!apiKey) {
-    throw new Error('Please set your OpenAI API key in the code');
-  }
-
-  const systemPrompt = `You are a web design assistant. The user has selected an HTML element and wants to modify it using natural language.
-
-Selected element info:
-- Tag: ${elementInfo.tagName}
-- ID: ${elementInfo.id || 'none'}
-- Classes: ${elementInfo.className || 'none'}
-- Current text: ${elementInfo.textContent}
-- CSS Selector: ${elementInfo.selector}
-
-Available actions you can return:
-1. changeText: Change text content
-2. changeStyle: Modify CSS properties (color, backgroundColor, fontSize, fontWeight, fontStyle, textDecoration, textAlign, etc.)
-3. changeHTML: Replace HTML content
-4. addClass: Add CSS class
-5. removeClass: Remove CSS class
-6. hide: Hide element
-7. show: Show element
-
-Return ONLY a JSON array of actions. Each action should have:
-- action: the action type
-- selector: "${elementInfo.selector}" (always use this exact selector)
-- For changeText: content (the new text)
-- For changeStyle: property and value
-- For changeHTML: content (the new HTML)
-- For addClass/removeClass: value (the class name)
-
-Examples:
-User: "make this red and bold"
-Response: [
-  {"action": "changeStyle", "selector": "${elementInfo.selector}", "property": "color", "value": "red"},
-  {"action": "changeStyle", "selector": "${elementInfo.selector}", "property": "fontWeight", "value": "bold"}
-]
-
-User: "change text to Hello World"
-Response: [
-  {"action": "changeText", "selector": "${elementInfo.selector}", "content": "Hello World"}
-]`;
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: request }
-      ],
-      max_tokens: 500,
-      temperature: 0.1
-    })
-  });
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error('Invalid API key. Please check your API key.');
-    }
-    throw new Error(`API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const aiResponse = data.choices[0].message.content;
-
-  try {
-    // Parse the JSON response from AI
-    const actions = JSON.parse(aiResponse);
-    
-    // Validate that it's an array
-    if (!Array.isArray(actions)) {
-      throw new Error('AI response is not an array');
-    }
-
-    // Validate each action has required fields
-    for (const action of actions) {
-      if (!action.action || !action.selector) {
-        throw new Error('Invalid action format');
-      }
-    }
-
-    return actions;
-  } catch (parseError) {
-    console.error('AI Response:', aiResponse);
-    throw new Error('Could not parse AI response. Please try rephrasing your request.');
-  }
-}
-
