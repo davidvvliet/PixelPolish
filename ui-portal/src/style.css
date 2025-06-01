@@ -495,3 +495,127 @@ button:focus-visible {
   color: #0066cc;
   font-size: 0.9em;
 }
+
+/* Submit Button Animation Styles */
+.submit-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.submit-success {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.sparkles-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+.sparkle-1 {
+  background: #87CEEB; /* Light blue */
+  top: 20%;
+  left: 15%;
+  animation-delay: 0s;
+}
+
+.sparkle-2 {
+  background: #DDA0DD; /* Lilac */
+  top: 70%;
+  left: 25%;
+  animation-delay: 0.2s;
+}
+
+.sparkle-3 {
+  background: #87CEEB; /* Light blue */
+  top: 30%;
+  right: 20%;
+  animation-delay: 0.4s;
+}
+
+.sparkle-4 {
+  background: #DDA0DD; /* Lilac */
+  bottom: 25%;
+  right: 15%;
+  animation-delay: 0.6s;
+}
+
+.sparkle-5 {
+  background: #87CEEB; /* Light blue */
+  top: 50%;
+  left: 50%;
+  animation-delay: 0.8s;
+}
+
+.sparkle-6 {
+  background: #DDA0DD; /* Lilac */
+  bottom: 60%;
+  left: 70%;
+  animation-delay: 1s;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5) rotate(180deg);
+  }
+}
+
+.success-text {
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  position: relative;
+}
+
+/* Enhanced button hover effects */
+.action-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.action-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.3);
+}
+
+.action-btn:disabled {
+  transform: none;
+}

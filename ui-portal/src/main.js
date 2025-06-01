@@ -19,7 +19,7 @@ document.querySelector('#app').innerHTML = `
       <div class="control-panel">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <h2 style="margin: 0;">Control Panel</h2>
-          <button class="action-btn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit</button>
+          <button class="action-btn" id="submitBtn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit</button>
         </div>
         
         <!-- Selected Element -->
@@ -117,7 +117,7 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="${getTargetUrl()}" 
+          src="./landing-page.html" 
           width="900" 
           height="700" 
           frameborder="0"
@@ -309,6 +309,13 @@ function saveChangeToState(data) {
 
 // Submit to MCP Server function
 window.submitToMCP = async function() {
+  const submitBtn = document.getElementById('submitBtn');
+  const originalBtnText = submitBtn.innerHTML;
+  const originalBtnStyle = submitBtn.style.cssText;
+  
+  // Show loading animation
+  showSubmitAnimation(submitBtn);
+  
   // Dynamically use the current port for the MCP endpoint
   const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
   const endpoint = `${window.location.protocol}//${window.location.hostname}:${currentPort}/api/submit`;
@@ -334,14 +341,69 @@ window.submitToMCP = async function() {
     
     if (response.ok) {
       const result = await response.json();
-      updateStatus(`Successfully submitted to MCP server! Response: ${result.message || 'OK'}`, true);
+      
+      // Show success animation with sparkles
+      showSuccessAnimation(submitBtn);
+      
+      // Update status after a delay
+      setTimeout(() => {
+        updateStatus(`Successfully submitted to MCP server! Response: ${result.message || 'OK'}`, true);
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+          resetSubmitButton(submitBtn, originalBtnText, originalBtnStyle);
+        }, 3000);
+      }, 1500);
+      
     } else {
       const errorText = await response.text();
       updateStatus(`MCP server error (${response.status}): ${errorText}`, false);
+      resetSubmitButton(submitBtn, originalBtnText, originalBtnStyle);
     }
   } catch (error) {
     updateStatus(`Failed to connect to MCP server: ${error.message}`, false);
+    resetSubmitButton(submitBtn, originalBtnText, originalBtnStyle);
   }
+}
+
+// Show loading animation on submit button
+function showSubmitAnimation(button) {
+  button.innerHTML = `
+    <div class="submit-loading">
+      <div class="loading-spinner"></div>
+      <span>Submitting...</span>
+    </div>
+  `;
+  button.style.background = 'linear-gradient(45deg, #646cff, #747bff)';
+  button.style.cursor = 'not-allowed';
+  button.disabled = true;
+}
+
+// Show success animation with sparkles
+function showSuccessAnimation(button) {
+  button.innerHTML = `
+    <div class="submit-success">
+      <div class="sparkles-container">
+        <div class="sparkle sparkle-1"></div>
+        <div class="sparkle sparkle-2"></div>
+        <div class="sparkle sparkle-3"></div>
+        <div class="sparkle sparkle-4"></div>
+        <div class="sparkle sparkle-5"></div>
+        <div class="sparkle sparkle-6"></div>
+      </div>
+      <span class="success-text">Submitted</span>
+    </div>
+  `;
+  button.style.background = 'linear-gradient(45deg, #4CAF50, #66BB6A)';
+  button.style.boxShadow = '0 4px 15px rgba(76, 175, 80, 0.4)';
+}
+
+// Reset submit button to original state
+function resetSubmitButton(button, originalText, originalStyle) {
+  button.innerHTML = originalText;
+  button.style.cssText = originalStyle;
+  button.disabled = false;
+  button.style.cursor = 'pointer';
 }
 
 // Generate a clean list of changes
