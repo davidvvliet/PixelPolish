@@ -1,5 +1,6 @@
 import './style.css'
 import pixelPolishLogo from '/pixelpolish-logo.webp'
+import { CONFIG } from './config.js'
 
 // Get URL from query parameters or use default
 function getTargetUrl() {
@@ -118,7 +119,7 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="${getTargetUrl()}" 
+          src="./landing-page.html" 
           width="900" 
           height="700" 
           frameborder="0"
@@ -887,6 +888,146 @@ window.togglePageAnimations = function() {
     property: 'animationPlayState',
     value: 'paused'
   });
+}
+
+// AI Assistant Function
+window.askAI = async function() {
+  if (!selectedElementInfo) {
+    updateAIStatus('Please select an element first', false);
+    return;
+  }
+  
+  const request = document.getElementById('aiRequest').value.trim();
+  if (!request) {
+    updateAIStatus('Please enter a request', false);
+    return;
+  }
+  
+  updateAIStatus('Processing your request...', true);
+  
+  try {
+    // Process the natural language request
+    const actions = await processAIRequest(request, selectedElementInfo);
+    
+    if (actions.length === 0) {
+      updateAIStatus('Could not understand the request. Try being more specific.', false);
+      return;
+    }
+    
+    // Apply each action
+    for (const action of actions) {
+      sendMessageToIframe(action);
+    }
+    
+    updateAIStatus(`Applied ${actions.length} change(s) successfully!`, true);
+    document.getElementById('aiRequest').value = ''; // Clear input
+    
+  } catch (error) {
+    updateAIStatus(`Error: ${error.message}`, false);
+  }
+}
+
+function updateAIStatus(message, success) {
+  const statusElement = document.getElementById('aiStatus');
+  statusElement.textContent = message;
+  statusElement.style.color = success ? '#28a745' : '#dc3545';
+}
+
+// Process natural language AI requests
+async function processAIRequest(request, elementInfo) {
+  // Get API key from config
+  const apiKey = CONFIG.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('Please set your OpenAI API key in config.js');
+  }
+
+  const systemPrompt = `You are a web design assistant. The user has selected an HTML element and wants to modify it using natural language.
+
+Selected element info:
+- Tag: ${elementInfo.tagName}
+- ID: ${elementInfo.id || 'none'}
+- Classes: ${elementInfo.className || 'none'}
+- Current text: ${elementInfo.textContent}
+- CSS Selector: ${elementInfo.selector}
+
+Available actions you can return:
+1. changeText: Change text content
+2. changeStyle: Modify CSS properties (color, backgroundColor, fontSize, fontWeight, fontStyle, textDecoration, textAlign, etc.)
+3. changeHTML: Replace HTML content
+4. addClass: Add CSS class
+5. removeClass: Remove CSS class
+6. hide: Hide element
+7. show: Show element
+
+Return ONLY a JSON array of actions. Each action should have:
+- action: the action type
+- selector: "${elementInfo.selector}" (always use this exact selector)
+- For changeText: content (the new text)
+- For changeStyle: property and value
+- For changeHTML: content (the new HTML)
+- For addClass/removeClass: value (the class name)
+
+Examples:
+User: "make this red and bold"
+Response: [
+  {"action": "changeStyle", "selector": "${elementInfo.selector}", "property": "color", "value": "red"},
+  {"action": "changeStyle", "selector": "${elementInfo.selector}", "property": "fontWeight", "value": "bold"}
+]
+
+User: "change text to Hello World"
+Response: [
+  {"action": "changeText", "selector": "${elementInfo.selector}", "content": "Hello World"}
+]`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: request }
+      ],
+      max_tokens: 500,
+      temperature: 0.1
+    })
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Invalid API key. Please check your API key.');
+    }
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const aiResponse = data.choices[0].message.content;
+
+  try {
+    // Parse the JSON response from AI
+    const actions = JSON.parse(aiResponse);
+    
+    // Validate that it's an array
+    if (!Array.isArray(actions)) {
+      throw new Error('AI response is not an array');
+    }
+
+    // Validate each action has required fields
+    for (const action of actions) {
+      if (!action.action || !action.selector) {
+        throw new Error('Invalid action format');
+      }
+    }
+
+    return actions;
+  } catch (parseError) {
+    console.error('AI Response:', aiResponse);
+    throw new Error('Could not parse AI response. Please try rephrasing your request.');
+  }
 }
 
 // Collapsible sections functionality
