@@ -15,6 +15,16 @@ document.querySelector('#app').innerHTML = `
     <div class="card">
       <button id="counter" type="button"></button>
     </div>
+    <div class="iframe-container">
+      <h2>Example.com</h2>
+      <iframe 
+        src="https://example.com" 
+        width="800" 
+        height="600" 
+        frameborder="0"
+        title="Example.com">
+      </iframe>
+    </div>
     <p class="read-the-docs">
       Click on the Vite logo to learn more
     </p>
