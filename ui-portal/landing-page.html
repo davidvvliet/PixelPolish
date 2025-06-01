@@ -443,12 +443,44 @@
 
         // DOM Manipulation Script for PixelPolish Control Panel
         function generateSelector(element) {
-            if (element.id) return '#' + element.id;
-            if (element.className) {
-                const classes = element.className.split(' ').filter(c => c.trim() !== '');
-                if (classes.length > 0) return '.' + classes[0];
+            // Try ID first (most specific)
+            if (element.id) {
+                return '#' + element.id;
             }
-            return element.tagName.toLowerCase();
+            
+            // Build a full path from the element to a unique parent
+            const path = [];
+            let currentElement = element;
+            
+            while (currentElement && currentElement !== document.body) {
+                let currentSelector = currentElement.tagName.toLowerCase();
+                
+                // Add class if available
+                if (currentElement.className) {
+                    const classes = currentElement.className.split(' ').filter(c => c.trim() !== '' && !c.includes('pixelpolish'));
+                    if (classes.length > 0) {
+                        currentSelector += '.' + classes[0];
+                    }
+                }
+                
+                // Add nth-child to make it unique among siblings
+                const parent = currentElement.parentElement;
+                if (parent && parent !== document.body) {
+                    const siblings = Array.from(parent.children);
+                    const index = siblings.indexOf(currentElement) + 1;
+                    currentSelector += `:nth-child(${index})`;
+                }
+                
+                path.unshift(currentSelector);
+                currentElement = currentElement.parentElement;
+                
+                // Stop when we reach a unique identifier or have enough specificity
+                if (currentElement && (currentElement.id || path.length >= 4)) {
+                    break;
+                }
+            }
+            
+            return path.join(' > ');
         }
 
         // Element selection for control panel
