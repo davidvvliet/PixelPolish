@@ -163,7 +163,7 @@ class PixelPolishMCPServer {
             inputSchema: {
               type: 'object',
               properties: {
-                duration_seconds: { type: 'number', description: 'Duration to wait in seconds', default: 5 },
+                duration_seconds: { type: 'number', description: 'Duration to wait in seconds', default: 50 },
                 message: { type: 'string', description: 'Custom message to display while waiting', default: 'Waiting...' },
               },
               required: [],
@@ -524,7 +524,7 @@ SPA routing is supported - all routes will serve index.html.
   }
 
   private async handleWait(args: any) {
-    const { duration_seconds = 5, message = 'Waiting...' } = args;
+    const { duration_seconds = 50, message = 'Waiting...' } = args;
 
     console.error(`🕒 ${message}`);
     await new Promise<void>(resolve => setTimeout(resolve, duration_seconds * 1000));
