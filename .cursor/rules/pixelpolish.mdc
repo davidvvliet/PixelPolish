@@ -9,12 +9,22 @@ alwaysApply: false
 
 When the user mentions "pixelpolish", "ui analysis", "serve ui portal", or requests UI/UX modifications, automatically execute this workflow:
 
-### 1. Initial Server Setup
+### 0. Initial Static Website Server Setup
+**FIRST STEP:** Before calling any MCP tools, start the static website server using Cursor's terminal:
+
+```bash
+npx serve -l 8081 /Users/earlpotters/Documents/ai-projects/PixelPolish/static_website
+```
+
+**Wait for confirmation** that the server is running on `http://localhost:8081` before proceeding to step 1.
+
+### 1. UI Portal Server Setup
 ```
 Call MCP tool: serve_vite_app
 Parameters:
 - port: 8080 (default)
 - dist_path: "/Users/earlpotters/Documents/ai-projects/PixelPolish/ui-portal/dist" (default)
+- url: "http://localhost:8081" (pass the static website URL)
 ```
 
 ### 2. Consecutive Wait Loop (5 iterations)
@@ -73,7 +83,7 @@ When a valid API request is received from the `wait` tool:
 2. **Parse the UI modification data** with expected structure:
    ```json
    {
-     "url": "http://localhost:8080/landing-page.html",
+     "url": "http://localhost:8081/landing-page.html",
      "changes": {
        "textChanges": { "#selector": "new text" },
        "styleChanges": { 
@@ -87,7 +97,7 @@ When a valid API request is received from the `wait` tool:
    }
    ```
 
-3. **Modify `./ui-portal/landing-page.html` file directly** by applying:
+3. **Modify the corresponding HTML file** in `/Users/earlpotters/Documents/ai-projects/PixelPolish/static_website/` by applying:
    - **Text Changes:** Update text content for specified selectors
    - **Style Changes:** Apply inline CSS styles or update style attributes
    - **HTML Changes:** Replace HTML content within specified elements
@@ -101,20 +111,22 @@ When a valid API request is received from the `wait` tool:
 Structure responses as:
 
 ```markdown
-## PixelPolish UI Portal Status
-✅ Server started at http://localhost:8080
+## PixelPolish Setup Complete
+✅ Static website server started at http://localhost:8081
+✅ UI Portal server started at http://localhost:8080
 🔄 Monitoring for API requests (attempt X/5)
 
 ## API Request Received
 **Timestamp:** [timestamp]
-**Target File:** ./ui-portal/landing-page.html
+**Target URL:** http://localhost:8081/[page].html
+**Target File:** /Users/earlpotters/Documents/ai-projects/PixelPolish/static_website/[page].html
 **Request Data:**
 ```json
 [parsed json data]
 ```
 
 ## File Modifications Applied
-**File Updated:** `./ui-portal/landing-page.html`
+**File Updated:** `/Users/earlpotters/Documents/ai-projects/PixelPolish/static_website/[page].html`
 
 ### Changes Made:
 - **Text Changes:** X modifications
@@ -129,18 +141,19 @@ Structure responses as:
 
 ### File Status:
 ✅ HTML file successfully updated and saved
-🔄 Changes are now live on the server
-🌐 Refresh http://localhost:8080/landing-page.html to see updates
+🔄 Changes are now live on http://localhost:8081
+🌐 Refresh http://localhost:8081/[page].html to see updates
 
 ## Next Steps
-- Refresh your browser to see the changes
+- Refresh your browser to see the changes at http://localhost:8081
 - Continue waiting for additional modification requests
 - Use browser dev tools to verify changes applied correctly
 ```
 
 ### 5. Error Handling
-- If server fails to start: Report error and suggest troubleshooting
-- If 5 wait attempts timeout: Inform user no requests received, keep server running
+- If static website server fails to start: Report error and suggest troubleshooting
+- If UI portal server fails to start: Report error and suggest troubleshooting
+- If 5 wait attempts timeout: Inform user no requests received, keep servers running
 - If invalid JSON received: Parse what's possible and ask for clarification
 
 ### 6. Keywords that Trigger This Rule
@@ -152,26 +165,29 @@ Structure responses as:
 - "modify ui based on analysis"
 
 ### 7. Automatic Sequential Actions
-Execute these MCP tool calls in **EXACT ORDER** without user intervention:
+Execute these actions in **EXACT ORDER** without user intervention:
 
-1. **FIRST:** Call `serve_vite_app` with specified parameters
-2. **IMMEDIATELY AFTER:** If server starts successfully, begin consecutive wait calls
-3. **THEN:** Call `wait` (attempt 1/5) - if timeout, proceed to step 4
-4. **THEN:** Call `wait` (attempt 2/5) - if timeout, proceed to step 5  
-5. **THEN:** Call `wait` (attempt 3/5) - if timeout, proceed to step 6
-6. **THEN:** Call `wait` (attempt 4/5) - if timeout, proceed to step 7
-7. **THEN:** Call `wait` (attempt 5/5) - final attempt
-8. **IF ANY WAIT RETURNS API DATA:** Skip remaining wait calls and process the request immediately
+1. **FIRST:** Execute terminal command: `npx serve -l 8081 /Users/earlpotters/Documents/ai-projects/PixelPolish/static_website`
+2. **WAIT:** Confirm static website server is running on http://localhost:8081
+3. **THEN:** Call `serve_vite_app` with `url: "http://localhost:8081"`
+4. **IMMEDIATELY AFTER:** If UI portal server starts successfully, begin consecutive wait calls
+5. **THEN:** Call `wait` (attempt 1/5) - if timeout, proceed to step 6
+6. **THEN:** Call `wait` (attempt 2/5) - if timeout, proceed to step 7  
+7. **THEN:** Call `wait` (attempt 3/5) - if timeout, proceed to step 8
+8. **THEN:** Call `wait` (attempt 4/5) - if timeout, proceed to step 9
+9. **THEN:** Call `wait` (attempt 5/5) - final attempt
+10. **IF ANY WAIT RETURNS API DATA:** Skip remaining wait calls and process the request immediately
 
 **Key Points:**
 - Do NOT wait for user input between these calls
 - Execute each `wait` call immediately after the previous one times out
 - Stop the sequence early if any `wait` call returns API request data
-- Keep server running regardless of wait results
+- Keep both servers running regardless of wait results
 
 ### 8. Advanced Features
-- **File System Integration:** Directly modify `./ui-portal/landing-page.html` based on JSON input
-- **Live Updates:** Changes are immediately reflected when browser is refreshed
+- **Dual Server Setup:** Static website on :8081, UI Portal on :8080
+- **File System Integration:** Directly modify files in `/Users/earlpotters/Documents/ai-projects/PixelPolish/static_website/` based on JSON input
+- **Live Updates:** Changes are immediately reflected when browser is refreshed at http://localhost:8081
 - **Comprehensive Change Support:**
   - Text content updates via `textChanges`
   - CSS style application via `styleChanges` 
@@ -187,7 +203,7 @@ Execute these MCP tool calls in **EXACT ORDER** without user intervention:
 **Expected JSON Format:**
 ```json
 {
-  "url": "http://localhost:8080/landing-page.html",
+  "url": "http://localhost:8081/landing-page.html",
   "changes": {
     "textChanges": { "#selector": "new text" },
     "styleChanges": { "selector": { "property": "value" } },
@@ -199,4 +215,10 @@ Execute these MCP tool calls in **EXACT ORDER** without user intervention:
 }
 ```
 
-This rule automates the entire workflow from server startup to processing UI modification requests and applying them directly to the HTML file.
+### 9. File Path Mapping
+When processing API requests, map the URL to the correct file path:
+- `http://localhost:8081/landing-page.html` → `/Users/earlpotters/Documents/ai-projects/PixelPolish/static_website/landing-page.html`
+- `http://localhost:8081/index.html` → `/Users/earlpotters/Documents/ai-projects/PixelPolish/static_website/index.html`
+- `http://localhost:8081/[any-page].html` → `/Users/earlpotters/Documents/ai-projects/PixelPolish/static_website/[any-page].html`
+
+This rule automates the entire workflow from static website server startup, UI portal server setup, to processing UI modification requests and applying them directly to the HTML files in the static website directory.
