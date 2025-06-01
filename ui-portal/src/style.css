@@ -76,11 +76,14 @@ h1 {
 .control-panel {
   flex: 0 0 400px;
   max-width: 400px;
+  height: 750px;
   background: #ffffff;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   border: 1px solid #e0e0e0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  align-self: flex-start;
 }
 
 .control-panel h2 {
@@ -198,8 +201,9 @@ h1 {
 }
 
 .iframe-container {
-  flex: 0 0 820px;
-  max-width: 820px;
+  flex: 0 0 920px;
+  max-width: 920px;
+  height: 750px;
   background: #ffffff;
   border-radius: 12px;
   padding: 1rem;

@@ -119,8 +119,8 @@ document.querySelector('#app').innerHTML = `
         <iframe 
           id="targetIframe"
           src="https://example.com" 
-          width="800" 
-          height="600" 
+          width="900" 
+          height="700" 
           frameborder="0"
           title="Example.com">
         </iframe>
