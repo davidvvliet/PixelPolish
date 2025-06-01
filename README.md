@@ -1,4 +1,5 @@
 # PixelPolish - AI-Powered Web Interface Manipulation Platform
+![](./pixelpolish-ui.png)
 
 **Professional DOM manipulation and analysis tools with natural language AI integration**
 
