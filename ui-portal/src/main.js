@@ -1,14 +1,10 @@
 import './style.css'
-import javascriptLogo from './javascript.svg'
+import pixelPolishLogo from '/pixelpolish-logo.webp'
 
 document.querySelector('#app').innerHTML = `
   <div>
     <div class="header">
-
-      <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-        <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-      </a>
-      <h1>DOM Manipulation Portal</h1>
+      <img src="${pixelPolishLogo}" class="logo pixelpolish" alt="PixelPolish logo" />
     </div>
 
     <div class="main-content">
@@ -122,11 +118,11 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="./example.html" 
-          width="800" 
-          height="600" 
+          src="https://example.com" 
+          width="900" 
+          height="700" 
           frameborder="0"
-          title="Local Example Domain">
+          title="Example.com">
         </iframe>
       </div>
     </div>
