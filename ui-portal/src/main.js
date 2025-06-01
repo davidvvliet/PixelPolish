@@ -13,7 +13,6 @@ document.querySelector('#app').innerHTML = `
           <h2 style="margin: 0;">Control Panel</h2>
           <button class="action-btn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit</button>
         </div>
-        <div style="width: 100%; height: 3px; background: #007bff; margin-bottom: 20px; border-radius: 2px;"></div>
         
         <!-- Selected Element -->
         <div class="control-section" id="selectedElementSection" style="display: none;">
