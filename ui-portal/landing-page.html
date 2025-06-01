@@ -453,9 +453,7 @@
 
         // Element selection for control panel
         document.addEventListener('click', function(e) {
-            // Don't interfere with normal link clicks
-            if (e.target.tagName === 'A') return;
-            
+            // Always prevent default behaviors for element selection
             e.preventDefault();
             e.stopPropagation();
             

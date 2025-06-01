@@ -13,6 +13,7 @@ document.querySelector('#app').innerHTML = `
           <h2 style="margin: 0;">Control Panel</h2>
           <button class="action-btn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit</button>
         </div>
+        <div style="width: 100%; height: 3px; background: #007bff; margin-bottom: 20px; border-radius: 2px;"></div>
         
         <!-- Quick Actions -->
         <div class="control-section">
@@ -159,6 +160,19 @@ document.querySelector('#app').innerHTML = `
           </div>
         </div>
 
+        <!-- Dynamic Page Controls -->
+        <div class="control-section" id="dynamicControlsSection" style="display: none;">
+          <h3 class="section-header collapsed" onclick="toggleSection('dynamicControls')">
+            <span>Page Elements</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="dynamicControls" style="display: none;">
+            <div id="generatedControls">
+              <p class="info-text">Loading page analysis...</p>
+            </div>
+          </div>
+        </div>
+
         <!-- State Management -->
         <div class="control-section">
           <h3 class="section-header collapsed" onclick="toggleSection('stateManagement')">
@@ -200,11 +214,11 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="./demo-page.html" 
+          src="./landing-page.html" 
           width="900" 
           height="700" 
           frameborder="0"
-          title="Interactive Demo Page">
+          title="PixelPolish Landing Page">
         </iframe>
       </div>
     </div>
@@ -377,7 +391,14 @@ window.addEventListener('load', () => {
       // Apply saved state when iframe is ready
       setTimeout(() => {
         applySavedState();
+        // Generate dynamic controls after page loads
+        setTimeout(() => {
+          generateDynamicControls();
+        }, 500);
       }, 100);
+    } else if (event.data.type === 'PAGE_ANALYSIS') {
+      // Receive page analysis data and generate controls
+      generateControlsFromAnalysis(event.data.analysis);
     }
   });
 });
@@ -746,18 +767,18 @@ window.submitToMCP = async function() {
     
     // Context about the page being modified
     pageContext: {
-      title: 'Interactive Demo Website',
-      type: 'demo-page',
+      title: 'PixelPolish Landing Page',
+      type: 'landing-page',
       mainElements: [
-        { selector: '#main-title', type: 'heading', description: 'Main page title' },
-        { selector: '#description', type: 'text', description: 'Page description paragraph' },
-        { selector: '.demo-section', type: 'container', description: 'Demo section with examples' },
-        { selector: '#section-title', type: 'heading', description: 'Section title' },
-        { selector: '#demo-text', type: 'text', description: 'Demo text paragraph' },
-        { selector: '#highlight-text', type: 'text', description: 'Highlighted text span' },
-        { selector: '#dynamic-content', type: 'container', description: 'Dynamic content area' },
-        { selector: '#demo-list', type: 'container', description: 'Demo list container' },
-        { selector: '#footer', type: 'container', description: 'Footer section' }
+        { selector: '.hero h1', type: 'heading', description: 'Main hero title' },
+        { selector: '.hero p', type: 'text', description: 'Hero description paragraph' },
+        { selector: '.cta-button', type: 'button', description: 'Call-to-action buttons' },
+        { selector: '.section-title', type: 'heading', description: 'Section titles' },
+        { selector: '.feature-card h3', type: 'heading', description: 'Feature card titles' },
+        { selector: '.feature-card p', type: 'text', description: 'Feature descriptions' },
+        { selector: '.demo-text h2', type: 'heading', description: 'Demo section title' },
+        { selector: '.demo-text p', type: 'text', description: 'Demo description paragraphs' },
+        { selector: '.footer', type: 'container', description: 'Footer section' }
       ]
     },
     
@@ -940,4 +961,158 @@ window.toggleSection = function(sectionId) {
     icon.textContent = '▶';
     header.classList.add('collapsed');
   }
+}
+
+// Request page analysis from iframe
+function generateDynamicControls() {
+  if (targetIframe && targetIframe.contentWindow) {
+    targetIframe.contentWindow.postMessage({
+      type: 'ANALYZE_PAGE'
+    }, '*');
+  }
+}
+
+// Generate controls based on page analysis
+function generateControlsFromAnalysis(analysis) {
+  const container = document.getElementById('generatedControls');
+  const section = document.getElementById('dynamicControlsSection');
+  
+  if (!analysis || analysis.length === 0) {
+    container.innerHTML = '<p class="info-text">No analyzable elements found.</p>';
+    return;
+  }
+  
+  // Show the section
+  section.style.display = 'block';
+  
+  let html = '<div class="dynamic-controls-grid">';
+  
+  // Group elements by type
+  const grouped = {};
+  analysis.forEach(element => {
+    if (!grouped[element.type]) {
+      grouped[element.type] = [];
+    }
+    grouped[element.type].push(element);
+  });
+  
+  // Generate controls for each type
+  Object.keys(grouped).forEach(type => {
+    html += `<div class="element-type-group">`;
+    html += `<h4 class="element-type-title">${type.toUpperCase()} (${grouped[type].length})</h4>`;
+    
+    grouped[type].forEach((element, index) => {
+      const shortText = element.text.length > 30 ? element.text.substring(0, 30) + '...' : element.text;
+      html += `
+        <div class="element-control" data-selector="${element.selector}">
+          <div class="element-info">
+            <strong>${element.selector}</strong>
+            <span class="element-text">${shortText}</span>
+          </div>
+          <div class="element-actions">
+            <button class="action-btn small" onclick="selectElementInIframe('${element.selector}')">Select</button>
+            ${type === 'heading' || type === 'text' ? 
+              `<button class="action-btn small" onclick="quickEditElement('${element.selector}')">Edit</button>` : ''}
+            <button class="action-btn small" onclick="quickStyleElement('${element.selector}')">Style</button>
+            <button class="action-btn small danger" onclick="quickHideElement('${element.selector}')">Hide</button>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += `</div>`;
+  });
+  
+  html += '</div>';
+  
+  // Add page-wide controls
+  html += `
+    <div class="page-wide-controls">
+      <h4>Page-Wide Actions</h4>
+      <div class="button-group">
+        <button class="action-btn" onclick="changePageBackground()">Change Background</button>
+        <button class="action-btn" onclick="adjustPageSpacing()">Adjust Spacing</button>
+        <button class="action-btn" onclick="togglePageAnimations()">Toggle Animations</button>
+      </div>
+    </div>
+  `;
+  
+  container.innerHTML = html;
+  
+  updateStatus(`Generated controls for ${analysis.length} elements`, true);
+}
+
+// Dynamic control action functions
+window.selectElementInIframe = function(selector) {
+  sendMessageToIframe({
+    action: 'selectElement',
+    selector: selector
+  });
+}
+
+window.quickEditElement = function(selector) {
+  const newText = prompt('Enter new text:');
+  if (newText !== null) {
+    sendMessageToIframe({
+      action: 'changeText',
+      selector: selector,
+      content: newText
+    });
+  }
+}
+
+window.quickStyleElement = function(selector) {
+  const property = prompt('CSS Property (e.g., color, backgroundColor, fontSize):');
+  if (property) {
+    const value = prompt(`Value for ${property}:`);
+    if (value) {
+      sendMessageToIframe({
+        action: 'changeStyle',
+        selector: selector,
+        property: property,
+        value: value
+      });
+    }
+  }
+}
+
+window.quickHideElement = function(selector) {
+  if (confirm(`Hide element "${selector}"?`)) {
+    sendMessageToIframe({
+      action: 'hide',
+      selector: selector
+    });
+  }
+}
+
+window.changePageBackground = function() {
+  const colors = ['#f8f9fa', '#e9ecef', '#fff3cd', '#d1ecf1', '#d4edda', '#f8d7da'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: 'body',
+    property: 'backgroundColor',
+    value: color
+  });
+}
+
+window.adjustPageSpacing = function() {
+  const spacing = prompt('Enter spacing value (e.g., 10px, 20px):');
+  if (spacing) {
+    sendMessageToIframe({
+      action: 'changeStyle',
+      selector: 'body',
+      property: 'padding',
+      value: spacing
+    });
+  }
+}
+
+window.togglePageAnimations = function() {
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: '*',
+    property: 'animationPlayState',
+    value: 'paused'
+  });
 }

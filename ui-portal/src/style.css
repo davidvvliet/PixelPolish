@@ -365,22 +365,102 @@ button:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem;
+  padding: 8px;
+  margin-bottom: 5px;
   background: #f8f9fa;
   border-radius: 4px;
-  margin-bottom: 0.5rem;
-  border-left: 3px solid #ff9800;
+  border-left: 3px solid #ff4444;
 }
 
 .hidden-element-info {
-  font-size: 0.85rem;
-  color: #666;
   flex: 1;
-  margin-right: 0.5rem;
+  font-size: 0.9em;
+  color: #666;
 }
 
 .action-btn.small {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.8rem;
-  margin-left: 0.5rem;
+  padding: 4px 8px;
+  font-size: 0.75em;
+  min-width: auto;
+}
+
+/* Dynamic Controls Styles */
+.dynamic-controls-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.element-type-group {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  background: #fafafa;
+}
+
+.element-type-title {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 0.9em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 5px;
+}
+
+.element-control {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
+}
+
+.element-control:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+}
+
+.element-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.element-info strong {
+  font-size: 0.85em;
+  color: #007bff;
+  font-family: monospace;
+}
+
+.element-text {
+  font-size: 0.8em;
+  color: #666;
+  font-style: italic;
+}
+
+.element-actions {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.page-wide-controls {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f0f8ff;
+  border-radius: 8px;
+  border: 1px solid #b3d9ff;
+}
+
+.page-wide-controls h4 {
+  margin: 0 0 10px 0;
+  color: #0066cc;
+  font-size: 0.9em;
 }
