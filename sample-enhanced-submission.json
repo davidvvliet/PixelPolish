@@ -1,0 +1,120 @@
+{
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "url": "./demo-page.html",
+  
+  "changes": {
+    "textChanges": {
+      "#main-title": "Modified Example Domain!",
+      "#demo-text": "TEST!"
+    },
+    "styleChanges": {
+      "body": {
+        "backgroundColor": "#b93864"
+      },
+      "#highlight-text": {
+        "backgroundColor": "#ff4444"
+      }
+    },
+    "htmlChanges": {
+      "#dynamic-content": "<div style=\"padding: 10px; background: #e3f2fd; border-radius: 4px;\">📦 Dynamic content block</div>"
+    },
+    "classChanges": {},
+    "hiddenElements": [
+      {
+        "selector": ".demo-section",
+        "tagName": "div", 
+        "id": "",
+        "textContent": "Demo Section"
+      }
+    ]
+  },
+  
+  "changeDescriptions": {
+    "textModifications": [
+      {
+        "selector": "#main-title",
+        "newText": "Modified Example Domain!",
+        "action": "Changed text content of \"#main-title\" to \"Modified Example Domain!\""
+      },
+      {
+        "selector": "#demo-text",
+        "newText": "TEST!",
+        "action": "Changed text content of \"#demo-text\" to \"TEST!\""
+      }
+    ],
+    "styleModifications": [
+      {
+        "selector": "body",
+        "property": "backgroundColor",
+        "value": "#b93864",
+        "action": "Applied CSS style \"backgroundColor: #b93864\" to \"body\""
+      },
+      {
+        "selector": "#highlight-text",
+        "property": "backgroundColor",
+        "value": "#ff4444", 
+        "action": "Applied CSS style \"backgroundColor: #ff4444\" to \"#highlight-text\""
+      }
+    ],
+    "contentModifications": [
+      {
+        "selector": "#dynamic-content",
+        "newHTML": "<div style=\"padding: 10px; background: #e3f2fd; border-radius: 4px;\">📦 Dynamic content block</div>",
+        "action": "Replaced HTML content of \"#dynamic-content\" with custom HTML"
+      }
+    ],
+    "classModifications": [],
+    "hiddenElements": [
+      {
+        "selector": ".demo-section",
+        "elementType": "div",
+        "action": "Hidden element \".demo-section\" (div)"
+      }
+    ],
+    "overallEffect": "Applied 5 total modifications to the webpage, including 2 text changes, 2 style changes, 1 content replacements, 0 class additions, and 1 hidden elements."
+  },
+  
+  "summary": {
+    "totalChanges": 5,
+    "textChanges": 2,
+    "styleChanges": 2,
+    "htmlChanges": 1,
+    "classChanges": 0,
+    "hiddenElements": 1
+  },
+  
+  "pageContext": {
+    "title": "Interactive Demo Website",
+    "type": "demo-page",
+    "mainElements": [
+      { "selector": "#main-title", "type": "heading", "description": "Main page title" },
+      { "selector": "#description", "type": "text", "description": "Page description paragraph" },
+      { "selector": ".demo-section", "type": "container", "description": "Demo section with examples" },
+      { "selector": "#section-title", "type": "heading", "description": "Section title" },
+      { "selector": "#demo-text", "type": "text", "description": "Demo text paragraph" },
+      { "selector": "#highlight-text", "type": "text", "description": "Highlighted text span" },
+      { "selector": "#dynamic-content", "type": "container", "description": "Dynamic content area" },
+      { "selector": "#demo-list", "type": "container", "description": "Demo list container" },
+      { "selector": "#footer", "type": "container", "description": "Footer section" }
+    ]
+  },
+  
+  "instructions": {
+    "purpose": "These changes represent DOM modifications made through the PixelPolish interface",
+    "howToUse": "Use this data to understand what changes were applied and potentially recreate or modify them",
+    "changeTypes": {
+      "textChanges": "Direct text content replacements - apply these by setting element.textContent",
+      "styleChanges": "CSS style modifications - apply these by setting element.style[property] = value", 
+      "htmlChanges": "HTML content replacements - apply these by setting element.innerHTML",
+      "classChanges": "CSS class additions - apply these by using element.classList.add(className)",
+      "hiddenElements": "Elements that were hidden - apply these by setting element.style.display = 'none'"
+    },
+    "context": "All changes were made to an interactive demo page with standard HTML elements",
+    "suggestedActions": [
+      "Apply text modifications to update content messaging",
+      "Apply style changes to modify visual appearance", 
+      "Replace HTML content to add dynamic elements",
+      "Hide specified elements to modify page layout"
+    ]
+  }
+} 
