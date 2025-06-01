@@ -166,16 +166,16 @@ document.querySelector('#app').innerHTML = `
             <div class="form-group">
               <p class="info-text">Changes are automatically saved to browser storage and restored on page refresh.</p>
             </div>
-            <div class="button-group">
-              <button class="action-btn" onclick="applySavedState()">Restore Changes</button>
-              <button class="action-btn danger" onclick="clearSavedState()">Reset All</button>
-            </div>
             <div class="form-group">
-              <label>Export/Import State:</label>
-              <div class="button-group">
-                <button class="action-btn" onclick="exportState()">Export</button>
-                <button class="action-btn" onclick="importState()">Import</button>
-              </div>
+              <label>MCP Server Endpoint:</label>
+              <input type="text" id="mcpEndpoint" placeholder="http://localhost:3000/api/submit" value="http://localhost:3000/api/submit">
+            </div>
+            <div class="button-group">
+              <button class="action-btn" onclick="submitToMCP()">Submit to MCP</button>
+              <button class="action-btn" onclick="applySavedState()">Restore Changes</button>
+            </div>
+            <div class="button-group">
+              <button class="action-btn danger" onclick="clearSavedState()">Reset All</button>
             </div>
           </div>
         </div>
@@ -721,6 +721,64 @@ window.importState = function() {
     }
   };
   input.click();
+}
+
+// Submit to MCP Server function
+window.submitToMCP = async function() {
+  const endpoint = document.getElementById('mcpEndpoint').value;
+  
+  if (!endpoint.trim()) {
+    updateStatus('Please enter MCP server endpoint', false);
+    return;
+  }
+  
+  // Prepare the payload with current state and metadata
+  const payload = {
+    timestamp: new Date().toISOString(),
+    url: document.getElementById('targetIframe').src,
+    changes: savedState,
+    summary: generateChangeSummary()
+  };
+  
+  try {
+    updateStatus('Submitting to MCP server...', true);
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      updateStatus(`Successfully submitted to MCP server! Response: ${result.message || 'OK'}`, true);
+    } else {
+      const errorText = await response.text();
+      updateStatus(`MCP server error (${response.status}): ${errorText}`, false);
+    }
+  } catch (error) {
+    updateStatus(`Failed to connect to MCP server: ${error.message}`, false);
+  }
+}
+
+// Generate a summary of changes for the MCP server
+function generateChangeSummary() {
+  const summary = {
+    totalChanges: 0,
+    textChanges: Object.keys(savedState.textChanges).length,
+    styleChanges: Object.keys(savedState.styleChanges).length,
+    htmlChanges: Object.keys(savedState.htmlChanges).length,
+    classChanges: Object.keys(savedState.classChanges).length,
+    hiddenElements: savedState.hiddenElements.length
+  };
+  
+  summary.totalChanges = summary.textChanges + summary.styleChanges + 
+                        summary.htmlChanges + summary.classChanges + summary.hiddenElements;
+  
+  return summary;
 }
 
 // Collapsible sections functionality
