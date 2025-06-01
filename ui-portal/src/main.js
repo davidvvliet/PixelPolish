@@ -37,11 +37,9 @@ document.querySelector('#app').innerHTML = `
             </div>
             <div class="quick-actions">
               <button class="action-btn" onclick="quickEditText()">Edit Text</button>
-              <button class="action-btn" onclick="quickChangeColor()">Change Color</button>
-              <button class="action-btn" onclick="quickChangeBg()">Change Background</button>
+              <button class="action-btn" onclick="quickChangeColor()">Text Color</button>
+              <button class="action-btn" onclick="quickChangeBg()">Background Color</button>
               <button class="action-btn" onclick="quickHide()">Hide</button>
-              <button class="action-btn" onclick="quickHighlight()">Highlight</button>
-              <button class="action-btn" onclick="quickRemoveHighlight()">Remove Highlight</button>
             </div>
             
             <!-- AI Assistant -->
