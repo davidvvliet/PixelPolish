@@ -294,6 +294,12 @@
         // Send ready message when page loads
         window.addEventListener('load', function() {
             initializeClickableElements();
+            
+            // Send ready message to parent for applying saved state
+            parent.postMessage({
+                type: 'IFRAME_READY'
+            }, '*');
+            
             sendResult('Demo page loaded and ready for manipulation! Click on any element to select it.', true);
         });
     </script>

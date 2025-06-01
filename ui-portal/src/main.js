@@ -156,6 +156,30 @@ document.querySelector('#app').innerHTML = `
           </div>
         </div>
 
+        <!-- State Management -->
+        <div class="control-section">
+          <h3 class="section-header collapsed" onclick="toggleSection('stateManagement')">
+            <span>State Management</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="stateManagement" style="display: none;">
+            <div class="form-group">
+              <p class="info-text">Changes are automatically saved to browser storage and restored on page refresh.</p>
+            </div>
+            <div class="button-group">
+              <button class="action-btn" onclick="applySavedState()">Restore Changes</button>
+              <button class="action-btn danger" onclick="clearSavedState()">Reset All</button>
+            </div>
+            <div class="form-group">
+              <label>Export/Import State:</label>
+              <div class="button-group">
+                <button class="action-btn" onclick="exportState()">Export</button>
+                <button class="action-btn" onclick="importState()">Import</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Status -->
         <div class="control-section">
           <h3>Status</h3>
@@ -196,10 +220,157 @@ document.querySelector('#app').innerHTML = `
 let targetIframe;
 let selectedElementInfo = null;
 let hiddenElements = [];
+let savedState = {
+  textChanges: {},
+  styleChanges: {},
+  htmlChanges: {},
+  classChanges: {},
+  hiddenElements: []
+};
+
+// Load saved state from localStorage
+function loadSavedState() {
+  const saved = localStorage.getItem('pixelpolish-state');
+  if (saved) {
+    savedState = JSON.parse(saved);
+    hiddenElements = savedState.hiddenElements || [];
+    updateHiddenElementsList();
+  }
+}
+
+// Save current state to localStorage
+function saveCurrentState() {
+  savedState.hiddenElements = hiddenElements;
+  localStorage.setItem('pixelpolish-state', JSON.stringify(savedState));
+  updateStatus('Changes saved to browser storage', true);
+}
+
+// Apply saved state to the demo page
+function applySavedState() {
+  // Apply text changes
+  Object.keys(savedState.textChanges).forEach(selector => {
+    sendMessageToIframe({
+      action: 'changeText',
+      selector: selector,
+      content: savedState.textChanges[selector]
+    });
+  });
+
+  // Apply style changes
+  Object.keys(savedState.styleChanges).forEach(selector => {
+    Object.keys(savedState.styleChanges[selector]).forEach(property => {
+      sendMessageToIframe({
+        action: 'changeStyle',
+        selector: selector,
+        property: property,
+        value: savedState.styleChanges[selector][property]
+      });
+    });
+  });
+
+  // Apply HTML changes
+  Object.keys(savedState.htmlChanges).forEach(selector => {
+    sendMessageToIframe({
+      action: 'changeHTML',
+      selector: selector,
+      content: savedState.htmlChanges[selector]
+    });
+  });
+
+  // Apply class changes
+  Object.keys(savedState.classChanges).forEach(selector => {
+    savedState.classChanges[selector].forEach(className => {
+      sendMessageToIframe({
+        action: 'addClass',
+        selector: selector,
+        value: className
+      });
+    });
+  });
+
+  // Apply hidden elements
+  hiddenElements.forEach(element => {
+    sendMessageToIframe({
+      action: 'hide',
+      selector: element.selector
+    });
+  });
+}
+
+// Clear all saved state
+window.clearSavedState = function() {
+  if (confirm('Are you sure you want to clear all saved changes? This will reset everything to the original state.')) {
+    localStorage.removeItem('pixelpolish-state');
+    savedState = {
+      textChanges: {},
+      styleChanges: {},
+      htmlChanges: {},
+      classChanges: {},
+      hiddenElements: []
+    };
+    hiddenElements = [];
+    updateHiddenElementsList();
+    location.reload(); // Reload to reset everything
+  }
+}
+
+// Enhanced sendMessageToIframe that saves state
+function sendMessageToIframe(data) {
+  if (targetIframe && targetIframe.contentWindow) {
+    targetIframe.contentWindow.postMessage({
+      type: 'DOM_MANIPULATION',
+      ...data
+    }, '*');
+    
+    // Save the change to local state (skip show/hide as they are handled separately)
+    if (data.action !== 'show' && data.action !== 'hide') {
+      saveChangeToState(data);
+    }
+  } else {
+    updateStatus('Error: Iframe not loaded', false);
+  }
+}
+
+function saveChangeToState(data) {
+  const { action, selector, property, value, content } = data;
+  
+  switch (action) {
+    case 'changeText':
+      savedState.textChanges[selector] = content;
+      break;
+    case 'changeHTML':
+      savedState.htmlChanges[selector] = content;
+      break;
+    case 'changeStyle':
+      if (!savedState.styleChanges[selector]) {
+        savedState.styleChanges[selector] = {};
+      }
+      savedState.styleChanges[selector][property] = value;
+      break;
+    case 'addClass':
+      if (!savedState.classChanges[selector]) {
+        savedState.classChanges[selector] = [];
+      }
+      if (!savedState.classChanges[selector].includes(value)) {
+        savedState.classChanges[selector].push(value);
+      }
+      break;
+    case 'removeClass':
+      if (savedState.classChanges[selector]) {
+        savedState.classChanges[selector] = savedState.classChanges[selector].filter(c => c !== value);
+      }
+      break;
+  }
+  
+  saveCurrentState();
+}
 
 // Wait for iframe to load
 window.addEventListener('load', () => {
   targetIframe = document.getElementById('targetIframe');
+  
+  // Load saved state on page load
+  loadSavedState();
   
   // Listen for messages from iframe
   window.addEventListener('message', (event) => {
@@ -207,6 +378,11 @@ window.addEventListener('load', () => {
       updateStatus(event.data.message, event.data.success);
     } else if (event.data.type === 'ELEMENT_SELECTED') {
       handleElementSelection(event.data.element);
+    } else if (event.data.type === 'IFRAME_READY') {
+      // Apply saved state when iframe is ready
+      setTimeout(() => {
+        applySavedState();
+      }, 100);
     }
   });
 });
@@ -224,17 +400,6 @@ function handleElementSelection(elementInfo) {
   document.getElementById('elementText').textContent = elementInfo.textContent;
   
   updateStatus(`Selected: ${elementInfo.tagName}${elementInfo.id ? '#' + elementInfo.id : ''}`, true);
-}
-
-function sendMessageToIframe(data) {
-  if (targetIframe && targetIframe.contentWindow) {
-    targetIframe.contentWindow.postMessage({
-      type: 'DOM_MANIPULATION',
-      ...data
-    }, '*');
-  } else {
-    updateStatus('Error: Iframe not loaded', false);
-  }
 }
 
 function updateStatus(message, success = true) {
@@ -514,6 +679,48 @@ window.showAllHidden = function() {
   });
   hiddenElements = [];
   updateHiddenElementsList();
+}
+
+// Export/Import state functions
+window.exportState = function() {
+  const stateJson = JSON.stringify(savedState, null, 2);
+  const blob = new Blob([stateJson], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pixelpolish-state.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  updateStatus('State exported successfully', true);
+}
+
+window.importState = function() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedState = JSON.parse(e.target.result);
+          savedState = importedState;
+          hiddenElements = savedState.hiddenElements || [];
+          saveCurrentState();
+          updateHiddenElementsList();
+          applySavedState();
+          updateStatus('State imported and applied successfully', true);
+        } catch (error) {
+          updateStatus('Error importing state: Invalid JSON file', false);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+  input.click();
 }
 
 // Collapsible sections functionality

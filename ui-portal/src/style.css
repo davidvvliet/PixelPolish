@@ -161,6 +161,25 @@ h1 {
   transform: translateY(-1px);
 }
 
+.action-btn.danger {
+  background: #dc3545;
+}
+
+.action-btn.danger:hover {
+  background: #c82333;
+}
+
+.info-text {
+  color: #666;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #646cff;
+}
+
 .form-group {
   margin-bottom: 1rem;
 }
@@ -361,7 +380,7 @@ button:focus-visible {
 }
 
 .action-btn.small {
-  padding: 0.3rem 0.6rem;
+  padding: 0.4rem 0.8rem;
   font-size: 0.8rem;
-  min-width: auto;
+  margin-left: 0.5rem;
 }
