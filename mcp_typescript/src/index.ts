@@ -174,6 +174,7 @@ class PixelPolishMCPServer {
               properties: {
                 port: { type: 'number', description: 'Port to serve on', default: 8080 },
                 dist_path: { type: 'string', description: 'Path to dist directory', default: './ui-portal/dist' },
+                url: { type: 'string', description: 'URL to pass as query parameter (?url=...)' },
               },
               required: [],
             },
@@ -390,7 +391,8 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
   private async handleServeViteApp(args: any) {
     const { 
       port = 8080,
-      dist_path = '../mcp_typescript/static_ui'
+      dist_path = '../mcp_typescript/static_ui',
+      url
     } = args;
 
     // Check if server is already running
@@ -474,10 +476,13 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
           }
         }
 
-        let filePath = req.url === '/' ? '/index.html' : req.url || '/index.html';
+        // Remove query parameters first
+        let filePath = (req.url || '/').split('?')[0];
         
-        // Remove query parameters
-        filePath = filePath.split('?')[0];
+        // If root path, serve index.html
+        if (filePath === '/') {
+          filePath = '/index.html';
+        }
         
         // Security: prevent directory traversal
         if (filePath.includes('..')) {
@@ -530,13 +535,15 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
         
         // Use the appropriate command based on the platform
         let openCommand = '';
+        const finalUrl = url ? `${serverUrl}?url=${encodeURIComponent(url)}` : serverUrl;
+        
         if (process.platform === 'darwin') {
-          openCommand = `open "${serverUrl}"`;
+          openCommand = `open "${finalUrl}"`;
         } else if (process.platform === 'win32') {
-          openCommand = `start "${serverUrl}"`;
+          openCommand = `start "${finalUrl}"`;
         } else {
           // Linux and other Unix-like systems
-          openCommand = `xdg-open "${serverUrl}"`;
+          openCommand = `xdg-open "${finalUrl}"`;
         }
         
         await execAsync(openCommand);
@@ -546,21 +553,24 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
         console.error(`Please manually open: ${serverUrl}`);
       }
 
+      const finalUrl = url ? `${serverUrl}?url=${encodeURIComponent(url)}` : serverUrl;
       const resultText = `✅ UI Portal is now serving and opened in your browser!
 
 🌐 **Server URL:** ${serverUrl}
+🔗 **Opened URL:** ${finalUrl}
 📁 **Serving from:** ${dist_path}
 ⚡ **Port:** ${port}
 📄 **Index file:** ${indexPath}
-🚀 **Browser:** Automatically opened ${serverUrl}
+🚀 **Browser:** Automatically opened ${finalUrl}
+${url ? `🎯 **Target URL:** ${url}` : ''}
 
 The UI Portal application is now accessible and should have opened in your default browser.
 CORS is enabled for development purposes.
 SPA routing is supported - all routes will serve index.html.
 
 **Quick Actions:**
-- The browser should have automatically opened to ${serverUrl}
-- If it didn't open, manually navigate to ${serverUrl}
+- The browser should have automatically opened to ${finalUrl}
+- If it didn't open, manually navigate to ${finalUrl}
 - Use \`stop_vite_app\` tool to stop the server
 - The server will serve all static assets from the dist directory`;
 
