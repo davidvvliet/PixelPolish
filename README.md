@@ -1,11 +1,12 @@
 # PixelPolish - UI Analysis MCP Server
 
-**🤖 Comprehensive UI Analysis Tools for AI Assistants**
+**Comprehensive UI Analysis Tools for AI Assistants**
 
-This project provides a powerful MCP (Model Context Protocol) server that gives AI assistants comprehensive UI analysis capabilities.
+This project provides a powerful MCP (Model Context Protocol) server that gives AI assistants comprehensive UI analysis capabilities, along with a visual DOM manipulation portal for interactive demonstrations.
 
-## 🚀 Quick Start
+## Quick Start
 
+### MCP Server
 ```bash
 cd mcp_typescript
 npm install
@@ -14,32 +15,55 @@ npm run build
 npm start
 ```
 
-## ✨ What's Included
+### UI Portal
+```bash
+cd ui-portal
+npm install
+npm run build
+npm run dev
+```
 
-The MCP server in `mcp_typescript/` provides AI assistants with:
+## What's Included
 
-- **🔍 DOM Structure Analysis** - Puppeteer-based element extraction
-- **🎨 CSS Pattern Detection** - Layout, spacing, typography analysis  
-- **📊 190-Point Heuristics** - Comprehensive scoring system
-- **📸 Screenshot Capture** - Playwright visual capture
-- **🤖 AI Visual Assessment** - GPT-4V/Claude integration
-- **🔧 Automated Fix Generation** - Priority CSS/HTML improvements
+### MCP Server (`mcp_typescript/`)
+The MCP server provides AI assistants with:
 
-## 📂 Project Structure
+- **DOM Structure Analysis** - Puppeteer-based element extraction
+- **CSS Pattern Detection** - Layout, spacing, typography analysis  
+- **190-Point Heuristics** - Comprehensive scoring system
+- **Screenshot Capture** - Playwright visual capture
+- **AI Visual Assessment** - GPT-4V/Claude integration
+- **Automated Fix Generation** - Priority CSS/HTML improvements
+
+### UI Portal (`ui-portal/`)
+A modern web interface that demonstrates DOM manipulation capabilities:
+
+- **Interactive Control Panel** - Quick actions and style manipulation tools
+- **Real-time Website Preview** - Live iframe display of target websites
+- **Text and Style Controls** - Dynamic content modification interface
+- **Professional Design** - Clean light-mode interface with PixelPolish branding
+
+## Project Structure
 
 ```
 PixelPolish/
-├── mcp_typescript/          # 🤖 MCP Server (MAIN)
+├── mcp_typescript/          # MCP Server (MAIN)
 │   ├── src/                 # TypeScript source code
 │   ├── package.json         # Dependencies and scripts
 │   ├── tsconfig.json        # TypeScript configuration
 │   └── README.md            # Detailed MCP documentation
-├── local/                   # 📁 HTML files for testing
+├── ui-portal/               # DOM Manipulation Portal
+│   ├── src/                 # Vite-based web application
+│   ├── dist/                # Built application
+│   ├── package.json         # Portal dependencies
+│   └── index.html           # Main HTML file
+├── local/                   # HTML files for testing
+├── web-ui/                  # Legacy web interface
 ├── .git/                    # Version control
 └── .gitignore               # Git ignore rules
 ```
 
-## 🔧 MCP Tools Available
+## MCP Tools Available
 
 When connected to an AI assistant, provides these tools:
 
@@ -48,7 +72,7 @@ When connected to an AI assistant, provides these tools:
 - **`analyze_dom_structure`** - DOM element extraction and analysis
 - **`run_heuristics_analysis`** - 190-point technical scoring
 
-## 🎯 Key Features
+## Key Features
 
 ### AI-Powered Analysis
 - **Technical Score:** 190-point heuristics across 6 rule categories
@@ -62,13 +86,19 @@ When connected to an AI assistant, provides these tools:
 - CSS pattern extraction and consistency checking
 - Issue classification by severity
 
+### Interactive Portal
+- Modern Vite-based web application
+- Real-time DOM manipulation demonstrations
+- Professional UI with PixelPolish branding
+- Cross-origin considerations for security
+
 ### Integration Ready
 - MCP protocol for AI assistant integration
 - Environment variable configuration
 - TypeScript with full type safety
 - Production-ready architecture
 
-## 📚 Full Documentation
+## Full Documentation
 
 See `mcp_typescript/README.md` for:
 - Complete tool documentation
@@ -76,16 +106,17 @@ See `mcp_typescript/README.md` for:
 - Development and customization guide
 - Architecture overview
 
-## 🏗️ Architecture Evolution
+## Architecture Evolution
 
 This project evolved from a split Express server system to a **unified MCP server** that provides:
 
-- ✅ **AI Assistant Integration** - Direct tool access via MCP protocol
-- ✅ **Comprehensive Analysis** - Technical + visual assessment combined
-- ✅ **Real-time Processing** - Immediate analysis results
-- ✅ **Simplified Deployment** - Single MCP server handles everything
+- **AI Assistant Integration** - Direct tool access via MCP protocol
+- **Comprehensive Analysis** - Technical + visual assessment combined
+- **Real-time Processing** - Immediate analysis results
+- **Simplified Deployment** - Single MCP server handles everything
+- **Interactive Demonstrations** - Visual portal for showcasing capabilities
 
-## 🔐 Environment Variables
+## Environment Variables
 
 ```bash
 # For AI visual analysis (optional)
@@ -93,9 +124,26 @@ OPENAI_API_KEY=sk-...           # For GPT-4 Vision
 ANTHROPIC_API_KEY=sk-ant-...    # For Claude Vision
 ```
 
+## Development
+
+### MCP Server Development
+```bash
+cd mcp_typescript
+npm run dev
+```
+
+### UI Portal Development
+```bash
+cd ui-portal
+npm run dev
+```
+
+Access the portal at `http://localhost:5173`
+
 ---
 
-**🎉 Ready to enhance AI assistants with comprehensive UI analysis capabilities!**
+**Ready to enhance AI assistants with comprehensive UI analysis capabilities!**
 
 *Head to `mcp_typescript/` for the complete MCP server implementation.*
+*Visit `ui-portal/` for the interactive DOM manipulation demonstration.*
 
