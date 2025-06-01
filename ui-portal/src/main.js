@@ -13,116 +13,146 @@ document.querySelector('#app').innerHTML = `
         
         <!-- Quick Actions -->
         <div class="control-section">
-          <h3>Quick Actions</h3>
-          <div class="quick-actions">
-            <button class="action-btn" onclick="changeTitle()">Change Title</button>
-            <button class="action-btn" onclick="changeBackground()">Change Background</button>
-            <button class="action-btn" onclick="addContent()">Add Content</button>
-            <button class="action-btn" onclick="highlightText()">Highlight Text</button>
-            <button class="action-btn" onclick="hideSection()">Hide Section</button>
-            <button class="action-btn" onclick="showSection()">Show Section</button>
+          <h3 class="section-header collapsed" onclick="toggleSection('quickActions')">
+            <span>Quick Actions</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="quickActions" style="display: none;">
+            <div class="quick-actions">
+              <button class="action-btn" onclick="changeTitle()">Change Title</button>
+              <button class="action-btn" onclick="changeBackground()">Change Background</button>
+              <button class="action-btn" onclick="addContent()">Add Content</button>
+              <button class="action-btn" onclick="highlightText()">Highlight Text</button>
+              <button class="action-btn" onclick="hideSection()">Hide Section</button>
+              <button class="action-btn" onclick="showSection()">Show Section</button>
+            </div>
           </div>
         </div>
 
         <!-- Selected Element -->
         <div class="control-section" id="selectedElementSection" style="display: none;">
-          <h3>Selected Element</h3>
-          <div id="elementInfo" class="element-info">
-            <p><strong>Tag:</strong> <span id="elementTag">-</span></p>
-            <p><strong>ID:</strong> <span id="elementId">-</span></p>
-            <p><strong>Selector:</strong> <span id="elementSelector">-</span></p>
-            <p><strong>Text:</strong> <span id="elementText">-</span></p>
-          </div>
-          <div class="quick-actions">
-            <button class="action-btn" onclick="quickEditText()">Edit Text</button>
-            <button class="action-btn" onclick="quickChangeColor()">Change Color</button>
-            <button class="action-btn" onclick="quickChangeBg()">Change Background</button>
-            <button class="action-btn" onclick="quickHide()">Hide</button>
-            <button class="action-btn" onclick="quickHighlight()">Highlight</button>
-            <button class="action-btn" onclick="quickRemoveHighlight()">Remove Highlight</button>
+          <h3 class="section-header collapsed" onclick="toggleSection('selectedElement')">
+            <span>Selected Element</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="selectedElement" style="display: none;">
+            <div id="elementInfo" class="element-info">
+              <p><strong>Tag:</strong> <span id="elementTag">-</span></p>
+              <p><strong>ID:</strong> <span id="elementId">-</span></p>
+              <p><strong>Selector:</strong> <span id="elementSelector">-</span></p>
+              <p><strong>Text:</strong> <span id="elementText">-</span></p>
+            </div>
+            <div class="quick-actions">
+              <button class="action-btn" onclick="quickEditText()">Edit Text</button>
+              <button class="action-btn" onclick="quickChangeColor()">Change Color</button>
+              <button class="action-btn" onclick="quickChangeBg()">Change Background</button>
+              <button class="action-btn" onclick="quickHide()">Hide</button>
+              <button class="action-btn" onclick="quickHighlight()">Highlight</button>
+              <button class="action-btn" onclick="quickRemoveHighlight()">Remove Highlight</button>
+            </div>
           </div>
         </div>
 
         <!-- Text Manipulation -->
         <div class="control-section">
-          <h3>Text Manipulation</h3>
-          <div class="form-group">
-            <label>Element Selector:</label>
-            <select id="textSelector">
-              <option value="#main-title">Main Title</option>
-              <option value="#description">Description</option>
-              <option value="#section-title">Section Title</option>
-              <option value="#demo-text">Demo Text</option>
-              <option value="#highlight-text">Highlighted Text</option>
-            </select>
+          <h3 class="section-header collapsed" onclick="toggleSection('textManipulation')">
+            <span>Text Manipulation</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="textManipulation" style="display: none;">
+            <div class="form-group">
+              <label>Element Selector:</label>
+              <select id="textSelector">
+                <option value="#main-title">Main Title</option>
+                <option value="#description">Description</option>
+                <option value="#section-title">Section Title</option>
+                <option value="#demo-text">Demo Text</option>
+                <option value="#highlight-text">Highlighted Text</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>New Text:</label>
+              <input type="text" id="newText" placeholder="Enter new text...">
+            </div>
+            <button class="action-btn" onclick="changeElementText()">Update Text</button>
           </div>
-          <div class="form-group">
-            <label>New Text:</label>
-            <input type="text" id="newText" placeholder="Enter new text...">
-          </div>
-          <button class="action-btn" onclick="changeElementText()">Update Text</button>
         </div>
 
         <!-- Style Manipulation -->
         <div class="control-section">
-          <h3>Style Manipulation</h3>
-          <div class="form-group">
-            <label>Element Selector:</label>
-            <input type="text" id="styleSelector" placeholder="e.g., #main-title, .highlight, body">
+          <h3 class="section-header collapsed" onclick="toggleSection('styleManipulation')">
+            <span>Style Manipulation</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="styleManipulation" style="display: none;">
+            <div class="form-group">
+              <label>Element Selector:</label>
+              <input type="text" id="styleSelector" placeholder="e.g., #main-title, .highlight, body">
+            </div>
+            <div class="form-group">
+              <label>CSS Property:</label>
+              <select id="cssProperty">
+                <option value="color">Text Color</option>
+                <option value="backgroundColor">Background Color</option>
+                <option value="fontSize">Font Size</option>
+                <option value="fontWeight">Font Weight</option>
+                <option value="border">Border</option>
+                <option value="padding">Padding</option>
+                <option value="margin">Margin</option>
+                <option value="transform">Transform</option>
+                <option value="opacity">Opacity</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Value:</label>
+              <input type="text" id="cssValue" placeholder="e.g., red, 20px, bold">
+            </div>
+            <button class="action-btn" onclick="changeElementStyle()">Apply Style</button>
           </div>
-          <div class="form-group">
-            <label>CSS Property:</label>
-            <select id="cssProperty">
-              <option value="color">Text Color</option>
-              <option value="backgroundColor">Background Color</option>
-              <option value="fontSize">Font Size</option>
-              <option value="fontWeight">Font Weight</option>
-              <option value="border">Border</option>
-              <option value="padding">Padding</option>
-              <option value="margin">Margin</option>
-              <option value="transform">Transform</option>
-              <option value="opacity">Opacity</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Value:</label>
-            <input type="text" id="cssValue" placeholder="e.g., red, 20px, bold">
-          </div>
-          <button class="action-btn" onclick="changeElementStyle()">Apply Style</button>
         </div>
 
         <!-- Content Manipulation -->
         <div class="control-section">
-          <h3>Content Manipulation</h3>
-          <div class="form-group">
-            <label>Target:</label>
-            <select id="contentTarget">
-              <option value="#dynamic-content">Dynamic Content Area</option>
-              <option value="#demo-list">Demo List</option>
-              <option value="#footer">Footer</option>
-            </select>
+          <h3 class="section-header collapsed" onclick="toggleSection('contentManipulation')">
+            <span>Content Manipulation</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="contentManipulation" style="display: none;">
+            <div class="form-group">
+              <label>Target:</label>
+              <select id="contentTarget">
+                <option value="#dynamic-content">Dynamic Content Area</option>
+                <option value="#demo-list">Demo List</option>
+                <option value="#footer">Footer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>HTML Content:</label>
+              <textarea id="htmlContent" placeholder="Enter HTML content..."></textarea>
+            </div>
+            <button class="action-btn" onclick="updateContent()">Update Content</button>
           </div>
-          <div class="form-group">
-            <label>HTML Content:</label>
-            <textarea id="htmlContent" placeholder="Enter HTML content..."></textarea>
-          </div>
-          <button class="action-btn" onclick="updateContent()">Update Content</button>
         </div>
 
         <!-- Advanced Controls -->
         <div class="control-section">
-          <h3>Advanced Controls</h3>
-          <div class="form-group">
-            <label>CSS Class to Add/Remove:</label>
-            <input type="text" id="cssClass" placeholder="e.g., highlight, hidden">
-          </div>
-          <div class="form-group">
-            <label>Target Selector:</label>
-            <input type="text" id="classTarget" placeholder="e.g., #main-title">
-          </div>
-          <div class="button-group">
-            <button class="action-btn" onclick="addClass()">Add Class</button>
-            <button class="action-btn" onclick="removeClass()">Remove Class</button>
+          <h3 class="section-header collapsed" onclick="toggleSection('advancedControls')">
+            <span>Advanced Controls</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="advancedControls" style="display: none;">
+            <div class="form-group">
+              <label>CSS Class to Add/Remove:</label>
+              <input type="text" id="cssClass" placeholder="e.g., highlight, hidden">
+            </div>
+            <div class="form-group">
+              <label>Target Selector:</label>
+              <input type="text" id="classTarget" placeholder="e.g., #main-title">
+            </div>
+            <div class="button-group">
+              <button class="action-btn" onclick="addClass()">Add Class</button>
+              <button class="action-btn" onclick="removeClass()">Remove Class</button>
+            </div>
           </div>
         </div>
 
@@ -130,6 +160,20 @@ document.querySelector('#app').innerHTML = `
         <div class="control-section">
           <h3>Status</h3>
           <div id="status" class="status-area">Ready to manipulate DOM...</div>
+        </div>
+
+        <!-- Hidden Elements -->
+        <div class="control-section" id="hiddenElementsSection" style="display: none;">
+          <h3 class="section-header collapsed" onclick="toggleSection('hiddenElements')">
+            <span>Hidden Elements</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="hiddenElements" style="display: none;">
+            <div class="form-group">
+              <button class="action-btn" onclick="showAllHidden()">Show All Hidden</button>
+            </div>
+            <div id="hiddenElementsList"></div>
+          </div>
         </div>
       </div>
 
@@ -151,6 +195,7 @@ document.querySelector('#app').innerHTML = `
 // DOM Manipulation Functions
 let targetIframe;
 let selectedElementInfo = null;
+let hiddenElements = [];
 
 // Wait for iframe to load
 window.addEventListener('load', () => {
@@ -246,10 +291,17 @@ window.highlightText = function() {
 }
 
 window.hideSection = function() {
+  const elementInfo = {
+    selector: '.demo-section',
+    tagName: 'div',
+    id: '',
+    textContent: 'Demo Section'
+  };
   sendMessageToIframe({
     action: 'hide',
     selector: '.demo-section'
   });
+  addToHiddenElements(elementInfo);
 }
 
 window.showSection = function() {
@@ -386,6 +438,7 @@ window.quickHide = function() {
     action: 'hide',
     selector: selectedElementInfo.selector
   });
+  addToHiddenElements(selectedElementInfo);
 }
 
 window.quickHighlight = function() {
@@ -404,4 +457,78 @@ window.quickRemoveHighlight = function() {
     selector: selectedElementInfo.selector,
     value: 'highlight'
   });
+}
+
+function addToHiddenElements(elementInfo) {
+  // Don't add duplicates
+  if (!hiddenElements.find(el => el.selector === elementInfo.selector)) {
+    hiddenElements.push(elementInfo);
+    updateHiddenElementsList();
+  }
+}
+
+function removeFromHiddenElements(selector) {
+  hiddenElements = hiddenElements.filter(el => el.selector !== selector);
+  updateHiddenElementsList();
+}
+
+function updateHiddenElementsList() {
+  const hiddenSection = document.getElementById('hiddenElementsSection');
+  const hiddenList = document.getElementById('hiddenElementsList');
+  
+  if (hiddenElements.length === 0) {
+    hiddenSection.style.display = 'none';
+    return;
+  }
+  
+  hiddenSection.style.display = 'block';
+  hiddenList.innerHTML = '';
+  
+  hiddenElements.forEach(element => {
+    const listItem = document.createElement('div');
+    listItem.className = 'hidden-element-item';
+    listItem.innerHTML = `
+      <span class="hidden-element-info">
+        ${element.tagName}${element.id ? '#' + element.id : ''}: ${element.textContent}
+      </span>
+      <button class="action-btn small" onclick="restoreElement('${element.selector}')">Show</button>
+    `;
+    hiddenList.appendChild(listItem);
+  });
+}
+
+window.restoreElement = function(selector) {
+  sendMessageToIframe({
+    action: 'show',
+    selector: selector
+  });
+  removeFromHiddenElements(selector);
+}
+
+window.showAllHidden = function() {
+  hiddenElements.forEach(element => {
+    sendMessageToIframe({
+      action: 'show',
+      selector: element.selector
+    });
+  });
+  hiddenElements = [];
+  updateHiddenElementsList();
+}
+
+// Collapsible sections functionality
+window.toggleSection = function(sectionId) {
+  const content = document.getElementById(sectionId);
+  const header = content.parentElement.querySelector('.section-header');
+  const icon = header.querySelector('.toggle-icon');
+  
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    icon.textContent = '▼';
+    header.classList.remove('collapsed');
+  } else {
+    content.style.display = 'none';
+    icon.textContent = '▶';
+    header.classList.add('collapsed');
+  }
 }

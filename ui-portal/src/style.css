@@ -109,6 +109,36 @@ h1 {
   font-size: 1.1rem;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin: -0.5rem -0.5rem 1rem -0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.section-header:hover {
+  background-color: #f0f0f0;
+}
+
+.section-header.collapsed {
+  margin-bottom: -0.5rem;
+}
+
+.toggle-icon {
+  font-size: 0.9rem;
+  color: #646cff;
+  transition: transform 0.2s ease;
+}
+
+.section-content {
+  transition: all 0.3s ease;
+}
+
 .quick-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -310,4 +340,28 @@ button:focus-visible {
 .element-info span {
   color: #646cff;
   font-family: monospace;
+}
+
+.hidden-element-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid #ff9800;
+}
+
+.hidden-element-info {
+  font-size: 0.85rem;
+  color: #666;
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+.action-btn.small {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  min-width: auto;
 }
