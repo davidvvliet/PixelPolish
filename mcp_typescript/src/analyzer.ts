@@ -1,13 +1,13 @@
 /**
- * AI Analyzer service for visual assessment using OpenAI GPT-4V or Anthropic Claude
+ * AI Analyzer service for visual assessment using OpenAI GPT-4V, Anthropic Claude, or Google Gemini
  */
 
 import type { AIAnalysis, AnalysisData, PriorityFix } from './types.js';
 
 export class AIAnalyzer {
-  private provider: 'openai' | 'anthropic';
+  private provider: 'openai' | 'anthropic' | 'gemini';
 
-  constructor(provider: 'openai' | 'anthropic' = 'openai') {
+  constructor(provider: 'openai' | 'anthropic' | 'gemini' = 'openai') {
     this.provider = provider;
   }
 
@@ -20,11 +20,17 @@ export class AIAnalyzer {
     try {
       if (this.provider === 'openai') {
         return await this.analyzeWithOpenAI(screenshotBase64, technicalData);
-      } else {
+      } else if (this.provider === 'anthropic') {
         return await this.analyzeWithAnthropic(screenshotBase64, technicalData);
+      } else if (this.provider === 'gemini') {
+        return await this.analyzeWithGoogle(screenshotBase64, technicalData);
+      } else {
+        // Should not happen with proper type checking, but as a safeguard:
+        console.warn(`⚠️ Unknown provider: ${this.provider}. Defaulting to mock data.`);
+        return this.generateMockAnalysis(technicalData);
       }
     } catch (error) {
-      console.warn(`⚠️ AI analysis failed, using mock data: ${error}`);
+      console.warn(`⚠️ AI analysis failed with ${this.provider}, using mock data: ${error}`);
       return this.generateMockAnalysis(technicalData);
     }
   }
@@ -47,7 +53,7 @@ export class AIAnalyzer {
     const issuesCount = technicalData.data?.analysis?.issues?.length || 0;
 
     const response = await client.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // Using gpt-4o for best multimodal capabilities
       max_tokens: 1500,
       messages: [
         {
@@ -70,7 +76,7 @@ export class AIAnalyzer {
     });
 
     const content = response.choices[0]?.message?.content || '';
-    return this.parseAIResponse(content, technicalScore);
+    return this.parseAIResponse(content, technicalData);
   }
 
   /**
@@ -91,7 +97,7 @@ export class AIAnalyzer {
     const issuesCount = technicalData.data?.analysis?.issues?.length || 0;
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-20250514", // Model from your original/updated code
       max_tokens: 1500,
       messages: [
         {
@@ -115,8 +121,59 @@ export class AIAnalyzer {
     });
 
     const content = response.content[0]?.type === 'text' ? response.content[0].text : '';
-    return this.parseAIResponse(content, technicalScore);
+    return this.parseAIResponse(content, technicalData);
   }
+
+  /**
+   * Analyze with Google Gemini
+   */
+  private async analyzeWithGoogle(screenshotBase64: string, technicalData: AnalysisData): Promise<AIAnalysis> {
+    const apiKey = process.env.GEMINI_API_KEY; // Using GEMINI_API_KEY as per your update
+
+    if (!apiKey) {
+      console.warn('⚠️ GEMINI_API_KEY not found, using mock analysis');
+      return this.generateMockAnalysis(technicalData);
+    }
+
+    const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    const technicalScore = technicalData.data?.analysis?.scorePercentage || 0;
+    const issuesCount = technicalData.data?.analysis?.issues?.length || 0;
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-pro-preview-05-06",
+      generationConfig: {
+        maxOutputTokens: 1500,
+        responseMimeType: "application/json", // Request JSON output directly
+      },
+      safetySettings: [
+        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+      ]
+    });
+
+    const prompt = this.buildAnalysisPrompt(technicalScore, issuesCount);
+    const imagePart = {
+      inlineData: {
+        data: screenshotBase64,
+        mimeType: "image/png",
+      },
+    };
+
+    try {
+      const result = await model.generateContent([prompt, imagePart]);
+      const response = result.response;
+      const content = response.text(); 
+      return this.parseAIResponse(content, technicalData);
+    } catch (error) {
+        console.warn(`⚠️ Google Gemini analysis failed: ${error}. Falling back to mock data.`);
+        return this.generateMockAnalysis(technicalData);
+    }
+  }
+
 
   /**
    * Build analysis prompt for AI models
@@ -157,50 +214,64 @@ Focus on:
 - Color scheme effectiveness
 - Typography consistency and readability  
 - Spacing and alignment issues
-- Accessibility concerns visible in the design
-- Mobile-first responsive design principles
-- Modern design best practices
+- Accessibility concerns visible in the design (e.g., contrast, touch target size)
+- Mobile-first responsive design principles (infer from layout if possible)
+- Modern design best practices and overall aesthetic appeal.
 
-Provide specific, actionable CSS/HTML fixes with exact code suggestions.`;
+Provide specific, actionable CSS/HTML fixes with exact code suggestions where applicable. Ensure the "element" field in "priority_fixes" describes the target HTML element (e.g., "button.primary", "div.header", "nav ul li").
+Be concise but thorough in your "detailed_feedback".
+The "visual_score" should be your assessment of the visual quality based on the screenshot.
+The "accessibility_score" in "visual_assessment" should be estimated based on visual cues (contrast, font sizes, spacing).
+If the image quality is too low or the content is uninterpretable, indicate this in the feedback and use placeholder values.`;
   }
 
   /**
    * Parse AI response into structured analysis
    */
-  private parseAIResponse(content: string, technicalScore: number): AIAnalysis {
+  private parseAIResponse(content: string, technicalData: AnalysisData): AIAnalysis {
+    const technicalScore = technicalData.data?.analysis?.scorePercentage || 0; // Extract technicalScore from technicalData
     try {
-      // Try to extract JSON from the response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        
-        // Ensure all required fields exist
-        return {
-          visual_assessment: {
-            overall_quality: parsed.visual_assessment?.overall_quality || 'fair',
-            color_harmony: parsed.visual_assessment?.color_harmony || 'fair',
-            layout_balance: parsed.visual_assessment?.layout_balance || 'fair', 
-            typography_consistency: parsed.visual_assessment?.typography_consistency || 'fair',
-            accessibility_score: parsed.visual_assessment?.accessibility_score || 60,
-            mobile_responsiveness: parsed.visual_assessment?.mobile_responsiveness || 'fair'
-          },
-          recommended_fixes: parsed.recommended_fixes || [],
-          technical_score: technicalScore,
-          visual_score: parsed.visual_score || 65,
-          total_issues: parsed.total_issues || 0,
-          priority_fixes: parsed.priority_fixes || [],
-          detailed_feedback: parsed.detailed_feedback || 'AI analysis completed successfully.'
-        };
+      let parsed;
+      // Try to parse content directly if it's a JSON string
+      try {
+        parsed = JSON.parse(content);
+      } catch (e) {
+        // If direct parsing fails, try to extract JSON from a larger string (e.g., wrapped in markdown)
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch && jsonMatch[0]) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          // If no JSON object is found, throw an error to fall back to mock.
+          throw new Error("No valid JSON object found in AI response.");
+        }
       }
+      
+      // Ensure all required fields exist, using defaults from your original code
+      return {
+        visual_assessment: {
+          overall_quality: parsed.visual_assessment?.overall_quality || 'fair',
+          color_harmony: parsed.visual_assessment?.color_harmony || 'fair',
+          layout_balance: parsed.visual_assessment?.layout_balance || 'fair', 
+          typography_consistency: parsed.visual_assessment?.typography_consistency || 'fair',
+          accessibility_score: parsed.visual_assessment?.accessibility_score || 60,
+          mobile_responsiveness: parsed.visual_assessment?.mobile_responsiveness || 'fair'
+        },
+        recommended_fixes: parsed.recommended_fixes || [],
+        technical_score: technicalScore, // Use technicalScore extracted from technicalData
+        visual_score: parsed.visual_score || 65,
+        total_issues: parsed.total_issues === undefined ? (technicalData.data?.analysis?.issues?.length || 0) : parsed.total_issues, // Prefer AI's count, else from technicalData
+        priority_fixes: parsed.priority_fixes || [], // Simpler default as per original
+        detailed_feedback: parsed.detailed_feedback || 'AI analysis completed successfully.' // Original default
+      };
     } catch (error) {
-      console.warn('⚠️ Failed to parse AI response, using fallback');
+      console.warn(`⚠️ Failed to parse AI response, using fallback: ${error}`);
+      // Pass the original technicalData to generateMockAnalysis
+      return this.generateMockAnalysis(technicalData);
     }
-
-    return this.generateMockAnalysis({ data: { analysis: { scorePercentage: technicalScore } } } as AnalysisData);
   }
 
   /**
-   * Generate mock analysis when AI is unavailable
+   * Generate mock analysis when AI is unavailable (Restored to your original version)
    */
   private generateMockAnalysis(technicalData: AnalysisData): AIAnalysis {
     const technicalScore = technicalData.data?.analysis?.scorePercentage || 50;
@@ -247,4 +318,4 @@ Provide specific, actionable CSS/HTML fixes with exact code suggestions.`;
       detailed_feedback: `Mock AI analysis: The design shows a technical score of ${technicalScore}% with opportunities for improvement in spacing consistency, typography hierarchy, and color usage. Focus on implementing a design system for better consistency.`
     };
   }
-} 
+}
