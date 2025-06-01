@@ -8,7 +8,7 @@ function getTargetUrl() {
   return targetUrl || 'http://localhost:8081/landing-page';
 }
 
-document.querySelector('#app').innerHTML = `
+document.querySelector("#app").innerHTML = `
   <div>
     <div class="header">
       <img src="${pixelPolishLogo}" class="logo pixelpolish" alt="PixelPolish logo" />
@@ -34,13 +34,222 @@ document.querySelector('#app').innerHTML = `
               <p><strong>Selector:</strong> <span id="elementSelector">-</span></p>
               <p><strong>Text:</strong> <span id="elementText">-</span></p>
             </div>
-            <div class="quick-actions">
-              <button class="action-btn" onclick="quickEditText()">Edit Text</button>
-              <button class="action-btn" onclick="quickChangeColor()">Change Color</button>
-              <button class="action-btn" onclick="quickChangeBg()">Change Background</button>
-              <button class="action-btn" onclick="quickHide()">Hide</button>
-              <button class="action-btn" onclick="quickHighlight()">Highlight</button>
-              <button class="action-btn" onclick="quickRemoveHighlight()">Remove Highlight</button>
+            
+            <!-- Typography Controls -->
+            <div class="control-subsection">
+              <h4 class="subsection-header" onclick="toggleSubsection('typography')">
+                <span>Typography</span>
+                <span class="toggle-icon">▶</span>
+              </h4>
+              <div class="subsection-content" id="typography" style="display: none;">
+                <div class="control-grid">
+                  <div class="control-item">
+                    <label>Font Size:</label>
+                    <input type="range" id="fontSize" min="8" max="72" value="16" oninput="updateFontSize(this.value)">
+                    <span id="fontSizeValue">16px</span>
+                  </div>
+                  <div class="control-item">
+                    <label>Font Weight:</label>
+                    <select id="fontWeight" onchange="updateFontWeight(this.value)">
+                      <option value="normal">Normal</option>
+                      <option value="bold">Bold</option>
+                      <option value="lighter">Lighter</option>
+                      <option value="100">100</option>
+                      <option value="400">400</option>
+                      <option value="700">700</option>
+                      <option value="900">900</option>
+                    </select>
+                  </div>
+                  <div class="control-item">
+                    <label>Font Family:</label>
+                    <select id="fontFamily" onchange="updateFontFamily(this.value)">
+                      <option value="inherit">Inherit</option>
+                      <option value="Arial, sans-serif">Arial</option>
+                      <option value="'Times New Roman', serif">Times New Roman</option>
+                      <option value="'Courier New', monospace">Courier New</option>
+                      <option value="Georgia, serif">Georgia</option>
+                      <option value="Verdana, sans-serif">Verdana</option>
+                    </select>
+                  </div>
+                  <div class="control-item">
+                    <label>Text Color:</label>
+                    <input type="color" id="textColor" onchange="updateTextColor(this.value)">
+                  </div>
+                  <div class="control-item">
+                    <label>Text Align:</label>
+                    <select id="textAlign" onchange="updateTextAlign(this.value)">
+                      <option value="left">Left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Right</option>
+                      <option value="justify">Justify</option>
+                    </select>
+                  </div>
+                  <div class="control-item">
+                    <label>Line Height:</label>
+                    <input type="range" id="lineHeight" min="0.5" max="3" step="0.1" value="1.5" oninput="updateLineHeight(this.value)">
+                    <span id="lineHeightValue">1.5</span>
+                  </div>
+                </div>
+                <div class="button-group">
+                  <button class="action-btn" onclick="quickEditText()">Edit Text</button>
+                  <button class="action-btn" onclick="toggleTextDecoration('underline')">Underline</button>
+                  <button class="action-btn" onclick="toggleTextDecoration('italic')">Italic</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Layout Controls -->
+            <div class="control-subsection">
+              <h4 class="subsection-header" onclick="toggleSubsection('layout')">
+                <span>Layout & Spacing</span>
+                <span class="toggle-icon">▶</span>
+              </h4>
+              <div class="subsection-content" id="layout" style="display: none;">
+                <div class="control-grid">
+                  <div class="control-item">
+                    <label>Width:</label>
+                    <input type="text" id="width" placeholder="auto" onchange="updateDimension('width', this.value)">
+                  </div>
+                  <div class="control-item">
+                    <label>Height:</label>
+                    <input type="text" id="height" placeholder="auto" onchange="updateDimension('height', this.value)">
+                  </div>
+                  <div class="control-item">
+                    <label>Display:</label>
+                    <select id="display" onchange="updateDisplay(this.value)">
+                      <option value="block">Block</option>
+                      <option value="inline">Inline</option>
+                      <option value="inline-block">Inline Block</option>
+                      <option value="flex">Flex</option>
+                      <option value="grid">Grid</option>
+                      <option value="none">None (Hide)</option>
+                    </select>
+                  </div>
+                  <div class="control-item">
+                    <label>Position:</label>
+                    <select id="position" onchange="updatePosition(this.value)">
+                      <option value="static">Static</option>
+                      <option value="relative">Relative</option>
+                      <option value="absolute">Absolute</option>
+                      <option value="fixed">Fixed</option>
+                      <option value="sticky">Sticky</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="spacing-controls">
+                  <h5>Margin</h5>
+                  <div class="spacing-grid">
+                    <input type="text" id="marginTop" placeholder="0" onchange="updateSpacing('margin-top', this.value)">
+                    <input type="text" id="marginRight" placeholder="0" onchange="updateSpacing('margin-right', this.value)">
+                    <input type="text" id="marginBottom" placeholder="0" onchange="updateSpacing('margin-bottom', this.value)">
+                    <input type="text" id="marginLeft" placeholder="0" onchange="updateSpacing('margin-left', this.value)">
+                  </div>
+                  <h5>Padding</h5>
+                  <div class="spacing-grid">
+                    <input type="text" id="paddingTop" placeholder="0" onchange="updateSpacing('padding-top', this.value)">
+                    <input type="text" id="paddingRight" placeholder="0" onchange="updateSpacing('padding-right', this.value)">
+                    <input type="text" id="paddingBottom" placeholder="0" onchange="updateSpacing('padding-bottom', this.value)">
+                    <input type="text" id="paddingLeft" placeholder="0" onchange="updateSpacing('padding-left', this.value)">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Appearance Controls -->
+            <div class="control-subsection">
+              <h4 class="subsection-header" onclick="toggleSubsection('appearance')">
+                <span>Appearance</span>
+                <span class="toggle-icon">▶</span>
+              </h4>
+              <div class="subsection-content" id="appearance" style="display: none;">
+                <div class="control-grid">
+                  <div class="control-item">
+                    <label>Background Color:</label>
+                    <input type="color" id="backgroundColor" onchange="updateBackgroundColor(this.value)">
+                  </div>
+                  <div class="control-item">
+                    <label>Opacity:</label>
+                    <input type="range" id="opacity" min="0" max="1" step="0.1" value="1" oninput="updateOpacity(this.value)">
+                    <span id="opacityValue">100%</span>
+                  </div>
+                  <div class="control-item">
+                    <label>Border Width:</label>
+                    <input type="range" id="borderWidth" min="0" max="10" value="0" oninput="updateBorderWidth(this.value)">
+                    <span id="borderWidthValue">0px</span>
+                  </div>
+                  <div class="control-item">
+                    <label>Border Color:</label>
+                    <input type="color" id="borderColor" onchange="updateBorderColor(this.value)">
+                  </div>
+                  <div class="control-item">
+                    <label>Border Radius:</label>
+                    <input type="range" id="borderRadius" min="0" max="50" value="0" oninput="updateBorderRadius(this.value)">
+                    <span id="borderRadiusValue">0px</span>
+                  </div>
+                  <div class="control-item">
+                    <label>Box Shadow:</label>
+                    <select id="boxShadow" onchange="updateBoxShadow(this.value)">
+                      <option value="none">None</option>
+                      <option value="0 2px 4px rgba(0,0,0,0.1)">Light</option>
+                      <option value="0 4px 8px rgba(0,0,0,0.2)">Medium</option>
+                      <option value="0 8px 16px rgba(0,0,0,0.3)">Heavy</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="button-group">
+                  <button class="action-btn" onclick="quickChangeBg()">Random Background</button>
+                  <button class="action-btn" onclick="quickHighlight()">Highlight</button>
+                  <button class="action-btn" onclick="quickRemoveHighlight()">Remove Highlight</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transform & Effects -->
+            <div class="control-subsection">
+              <h4 class="subsection-header" onclick="toggleSubsection('effects')">
+                <span>Transform & Effects</span>
+                <span class="toggle-icon">▶</span>
+              </h4>
+              <div class="subsection-content" id="effects" style="display: none;">
+                <div class="control-grid">
+                  <div class="control-item">
+                    <label>Scale:</label>
+                    <input type="range" id="scale" min="0.5" max="2" step="0.1" value="1" oninput="updateTransform()">
+                    <span id="scaleValue">1</span>
+                  </div>
+                  <div class="control-item">
+                    <label>Rotate:</label>
+                    <input type="range" id="rotate" min="-180" max="180" value="0" oninput="updateTransform()">
+                    <span id="rotateValue">0°</span>
+                  </div>
+                  <div class="control-item">
+                    <label>Blur:</label>
+                    <input type="range" id="blur" min="0" max="10" value="0" oninput="updateFilter()">
+                    <span id="blurValue">0px</span>
+                  </div>
+                  <div class="control-item">
+                    <label>Brightness:</label>
+                    <input type="range" id="brightness" min="0" max="2" step="0.1" value="1" oninput="updateFilter()">
+                    <span id="brightnessValue">100%</span>
+                  </div>
+                </div>
+                <div class="button-group">
+                  <button class="action-btn" onclick="resetTransforms()">Reset Transforms</button>
+                  <button class="action-btn" onclick="animateElement()">Add Animation</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="control-subsection">
+              <h4>Quick Actions</h4>
+              <div class="button-group">
+                <button class="action-btn danger" onclick="quickHide()">Hide Element</button>
+                <button class="action-btn" onclick="duplicateElement()">Duplicate</button>
+                <button class="action-btn" onclick="copyElementStyles()">Copy Styles</button>
+                <button class="action-btn" onclick="resetElementStyles()">Reset Styles</button>
+                <button class="action-btn danger" onclick="clearSavedState()">Reset All Changes</button>
+              </div>
             </div>
           </div>
         </div>
@@ -56,39 +265,6 @@ document.querySelector('#app').innerHTML = `
               <button class="action-btn" onclick="showAllHidden()">Show All Hidden</button>
             </div>
             <div id="hiddenElementsList"></div>
-          </div>
-        </div>
-        
-        <!-- Dynamic Page Controls -->
-        <div class="control-section">
-          <h3 class="section-header collapsed" onclick="toggleSection('dynamicControls')">
-            <span>Dynamic Page Controls</span>
-            <span class="toggle-icon">▶</span>
-          </h3>
-          <div class="section-content" id="dynamicControls" style="display: none;">
-            <div class="form-group">
-              <p class="info-text">These controls are dynamically generated based on page analysis.</p>
-            </div>
-            <div class="button-group">
-              <button class="action-btn" onclick="generateDynamicControls()">Generate Controls</button>
-            </div>
-            <div id="generatedControls"></div>
-          </div>
-        </div>
-
-        <!-- State Management -->
-        <div class="control-section">
-          <h3 class="section-header collapsed" onclick="toggleSection('stateManagement')">
-            <span>State Management</span>
-            <span class="toggle-icon">▶</span>
-          </h3>
-          <div class="section-content" id="stateManagement" style="display: none;">
-            <div class="form-group">
-              <p class="info-text">Changes are automatically saved to browser storage and restored on page refresh.</p>
-            </div>
-            <div class="button-group">
-              <button class="action-btn danger" onclick="clearSavedState()">Reset Changes</button>
-            </div>
           </div>
         </div>
         
@@ -114,7 +290,7 @@ document.querySelector('#app').innerHTML = `
       </div>
     </div>
   </div>
-`
+`;
 
 // DOM Manipulation Functions
 let targetIframe;
@@ -519,14 +695,7 @@ window.addEventListener('load', () => {
       // Apply saved state when iframe is ready
       setTimeout(() => {
         applySavedState();
-        // Generate dynamic controls after page loads
-        setTimeout(() => {
-          generateDynamicControls();
-        }, 500);
       }, 100);
-    } else if (event.data.type === 'PAGE_ANALYSIS') {
-      // Receive page analysis data and generate controls
-      generateControlsFromAnalysis(event.data.analysis);
     }
   });
 });
@@ -722,160 +891,6 @@ window.importState = function() {
   input.click();
 }
 
-// Request page analysis from iframe
-function generateDynamicControls() {
-  if (targetIframe && targetIframe.contentWindow) {
-    targetIframe.contentWindow.postMessage({
-      type: 'ANALYZE_PAGE'
-    }, '*');
-  }
-}
-
-// Generate controls based on page analysis
-function generateControlsFromAnalysis(analysis) {
-  const container = document.getElementById('generatedControls');
-  const section = document.getElementById('dynamicControlsSection');
-  
-  if (!analysis || analysis.length === 0) {
-    container.innerHTML = '<p class="info-text">No analyzable elements found.</p>';
-    return;
-  }
-  
-  // Show the section
-  section.style.display = 'block';
-  
-  let html = '<div class="dynamic-controls-grid">';
-  
-  // Group elements by type
-  const grouped = {};
-  analysis.forEach(element => {
-    if (!grouped[element.type]) {
-      grouped[element.type] = [];
-    }
-    grouped[element.type].push(element);
-  });
-  
-  // Generate controls for each type
-  Object.keys(grouped).forEach(type => {
-    html += `<div class="element-type-group">`;
-    html += `<h4 class="element-type-title">${type.toUpperCase()} (${grouped[type].length})</h4>`;
-    
-    grouped[type].forEach((element, index) => {
-      const shortText = element.text.length > 30 ? element.text.substring(0, 30) + '...' : element.text;
-      html += `
-        <div class="element-control" data-selector="${element.selector}">
-          <div class="element-info">
-            <strong>${element.selector}</strong>
-            <span class="element-text">${shortText}</span>
-          </div>
-          <div class="element-actions">
-            <button class="action-btn small" onclick="selectElementInIframe('${element.selector}')">Select</button>
-            ${type === 'heading' || type === 'text' ? 
-              `<button class="action-btn small" onclick="quickEditElement('${element.selector}')">Edit</button>` : ''}
-            <button class="action-btn small" onclick="quickStyleElement('${element.selector}')">Style</button>
-            <button class="action-btn small danger" onclick="quickHideElement('${element.selector}')">Hide</button>
-          </div>
-        </div>
-      `;
-    });
-    
-    html += `</div>`;
-  });
-  
-  html += '</div>';
-  
-  // Add page-wide controls
-  html += `
-    <div class="page-wide-controls">
-      <h4>Page-Wide Actions</h4>
-      <div class="button-group">
-        <button class="action-btn" onclick="changePageBackground()">Change Background</button>
-        <button class="action-btn" onclick="adjustPageSpacing()">Adjust Spacing</button>
-        <button class="action-btn" onclick="togglePageAnimations()">Toggle Animations</button>
-      </div>
-    </div>
-  `;
-  
-  container.innerHTML = html;
-  
-  updateStatus(`Generated controls for ${analysis.length} elements`, true);
-}
-
-// Dynamic control action functions
-window.selectElementInIframe = function(selector) {
-  sendMessageToIframe({
-    action: 'selectElement',
-    selector: selector
-  });
-}
-
-window.quickEditElement = function(selector) {
-  const newText = prompt('Enter new text:');
-  if (newText !== null) {
-    sendMessageToIframe({
-      action: 'changeText',
-      selector: selector,
-      content: newText
-    });
-  }
-}
-
-window.quickStyleElement = function(selector) {
-  const property = prompt('CSS Property (e.g., color, backgroundColor, fontSize):');
-  if (property) {
-    const value = prompt(`Value for ${property}:`);
-    if (value) {
-      sendMessageToIframe({
-        action: 'changeStyle',
-        selector: selector,
-        property: property,
-        value: value
-      });
-    }
-  }
-}
-
-window.quickHideElement = function(selector) {
-  if (confirm(`Hide element "${selector}"?`)) {
-    sendMessageToIframe({
-      action: 'hide',
-      selector: selector
-    });
-  }
-}
-
-window.changePageBackground = function() {
-  const colors = ['#f8f9fa', '#e9ecef', '#fff3cd', '#d1ecf1', '#d4edda', '#f8d7da'];
-  const color = colors[Math.floor(Math.random() * colors.length)];
-  sendMessageToIframe({
-    action: 'changeStyle',
-    selector: 'body',
-    property: 'backgroundColor',
-    value: color
-  });
-}
-
-window.adjustPageSpacing = function() {
-  const spacing = prompt('Enter spacing value (e.g., 10px, 20px):');
-  if (spacing) {
-    sendMessageToIframe({
-      action: 'changeStyle',
-      selector: 'body',
-      property: 'padding',
-      value: spacing
-    });
-  }
-}
-
-window.togglePageAnimations = function() {
-  sendMessageToIframe({
-    action: 'changeStyle',
-    selector: '*',
-    property: 'animationPlayState',
-    value: 'paused'
-  });
-}
-
 // Collapsible sections functionality
 window.toggleSection = function(sectionId) {
   const content = document.getElementById(sectionId);
@@ -890,5 +905,375 @@ window.toggleSection = function(sectionId) {
     content.style.display = 'none';
     icon.textContent = '▶';
     header.classList.add('collapsed');
+  }
+}
+
+// Enhanced Control Panel Functions
+
+// Typography Controls
+window.updateFontSize = function(value) {
+  if (!selectedElementInfo) return;
+  document.getElementById('fontSizeValue').textContent = value + 'px';
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'fontSize',
+    value: value + 'px'
+  });
+}
+
+window.updateFontWeight = function(value) {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'fontWeight',
+    value: value
+  });
+}
+
+window.updateFontFamily = function(value) {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'fontFamily',
+    value: value
+  });
+}
+
+window.updateTextColor = function(value) {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'color',
+    value: value
+  });
+}
+
+window.updateTextAlign = function(value) {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'textAlign',
+    value: value
+  });
+}
+
+window.updateLineHeight = function(value) {
+  if (!selectedElementInfo) return;
+  document.getElementById('lineHeightValue').textContent = value;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'lineHeight',
+    value: value
+  });
+}
+
+window.toggleTextDecoration = function(decoration) {
+  if (!selectedElementInfo) return;
+  if (decoration === 'italic') {
+    sendMessageToIframe({
+      action: 'changeStyle',
+      selector: selectedElementInfo.selector,
+      property: 'fontStyle',
+      value: 'italic'
+    });
+  } else if (decoration === 'underline') {
+    sendMessageToIframe({
+      action: 'changeStyle',
+      selector: selectedElementInfo.selector,
+      property: 'textDecoration',
+      value: 'underline'
+    });
+  }
+}
+
+// Layout Controls
+window.updateDimension = function(property, value) {
+  if (!selectedElementInfo) return;
+  if (value && !value.includes('px') && !value.includes('%') && !value.includes('auto') && !value.includes('em')) {
+    value = value + 'px';
+  }
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: property,
+    value: value
+  });
+}
+
+window.updateDisplay = function(value) {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'display',
+    value: value
+  });
+}
+
+window.updatePosition = function(value) {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'position',
+    value: value
+  });
+}
+
+window.updateSpacing = function(property, value) {
+  if (!selectedElementInfo) return;
+  if (value && !value.includes('px') && !value.includes('%') && !value.includes('auto') && !value.includes('em')) {
+    value = value + 'px';
+  }
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: property,
+    value: value
+  });
+}
+
+// Appearance Controls
+window.updateBackgroundColor = function(value) {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'backgroundColor',
+    value: value
+  });
+}
+
+window.updateOpacity = function(value) {
+  if (!selectedElementInfo) return;
+  document.getElementById('opacityValue').textContent = Math.round(value * 100) + '%';
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'opacity',
+    value: value
+  });
+}
+
+window.updateBorderWidth = function(value) {
+  if (!selectedElementInfo) return;
+  document.getElementById('borderWidthValue').textContent = value + 'px';
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'borderWidth',
+    value: value + 'px'
+  });
+  // Set default border style if width > 0
+  if (value > 0) {
+    sendMessageToIframe({
+      action: 'changeStyle',
+      selector: selectedElementInfo.selector,
+      property: 'borderStyle',
+      value: 'solid'
+    });
+  }
+}
+
+window.updateBorderColor = function(value) {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'borderColor',
+    value: value
+  });
+}
+
+window.updateBorderRadius = function(value) {
+  if (!selectedElementInfo) return;
+  document.getElementById('borderRadiusValue').textContent = value + 'px';
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'borderRadius',
+    value: value + 'px'
+  });
+}
+
+window.updateBoxShadow = function(value) {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'boxShadow',
+    value: value
+  });
+}
+
+// Transform & Effects Controls
+window.updateTransform = function() {
+  if (!selectedElementInfo) return;
+  const scale = document.getElementById('scale').value;
+  const rotate = document.getElementById('rotate').value;
+  
+  document.getElementById('scaleValue').textContent = scale;
+  document.getElementById('rotateValue').textContent = rotate + '°';
+  
+  const transform = `scale(${scale}) rotate(${rotate}deg)`;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'transform',
+    value: transform
+  });
+}
+
+window.updateFilter = function() {
+  if (!selectedElementInfo) return;
+  const blur = document.getElementById('blur').value;
+  const brightness = document.getElementById('brightness').value;
+  
+  document.getElementById('blurValue').textContent = blur + 'px';
+  document.getElementById('brightnessValue').textContent = Math.round(brightness * 100) + '%';
+  
+  const filter = `blur(${blur}px) brightness(${brightness})`;
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'filter',
+    value: filter
+  });
+}
+
+window.resetTransforms = function() {
+  if (!selectedElementInfo) return;
+  document.getElementById('scale').value = 1;
+  document.getElementById('rotate').value = 0;
+  document.getElementById('blur').value = 0;
+  document.getElementById('brightness').value = 1;
+  updateTransform();
+  updateFilter();
+}
+
+window.animateElement = function() {
+  if (!selectedElementInfo) return;
+  const animations = [
+    'pulse 2s infinite',
+    'bounce 1s',
+    'shake 0.5s',
+    'fadeIn 1s',
+    'slideIn 0.5s'
+  ];
+  const randomAnimation = animations[Math.floor(Math.random() * animations.length)];
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'animation',
+    value: randomAnimation
+  });
+}
+
+// Additional Quick Actions
+window.duplicateElement = function() {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'duplicateElement',
+    selector: selectedElementInfo.selector
+  });
+}
+
+window.copyElementStyles = function() {
+  if (!selectedElementInfo) return;
+  // Store styles in localStorage for pasting
+  localStorage.setItem('pixelpolish-copied-styles', JSON.stringify({
+    selector: selectedElementInfo.selector,
+    timestamp: Date.now()
+  }));
+  updateStatus('Element styles copied! Select another element and use "Paste Styles"', true);
+}
+
+window.pasteElementStyles = function() {
+  if (!selectedElementInfo) return;
+  const copiedStyles = localStorage.getItem('pixelpolish-copied-styles');
+  if (copiedStyles) {
+    const parsed = JSON.parse(copiedStyles);
+    // This would need implementation in the iframe to copy computed styles
+    sendMessageToIframe({
+      action: 'copyStyles',
+      fromSelector: parsed.selector,
+      toSelector: selectedElementInfo.selector
+    });
+  } else {
+    updateStatus('No styles copied yet!', false);
+  }
+}
+
+window.resetElementStyles = function() {
+  if (!selectedElementInfo) return;
+  if (confirm('Reset all styles for this element?')) {
+    sendMessageToIframe({
+      action: 'resetStyles',
+      selector: selectedElementInfo.selector
+    });
+    // Reset all control values
+    resetControlValues();
+  }
+}
+
+function resetControlValues() {
+  // Reset all control inputs to default values
+  const controls = [
+    { id: 'fontSize', value: 16 },
+    { id: 'fontWeight', value: 'normal' },
+    { id: 'fontFamily', value: 'inherit' },
+    { id: 'textAlign', value: 'left' },
+    { id: 'lineHeight', value: 1.5 },
+    { id: 'width', value: '' },
+    { id: 'height', value: '' },
+    { id: 'display', value: 'block' },
+    { id: 'position', value: 'static' },
+    { id: 'opacity', value: 1 },
+    { id: 'borderWidth', value: 0 },
+    { id: 'borderRadius', value: 0 },
+    { id: 'boxShadow', value: 'none' },
+    { id: 'scale', value: 1 },
+    { id: 'rotate', value: 0 },
+    { id: 'blur', value: 0 },
+    { id: 'brightness', value: 1 }
+  ];
+  
+  controls.forEach(control => {
+    const element = document.getElementById(control.id);
+    if (element) {
+      element.value = control.value;
+    }
+  });
+  
+  // Update display values
+  document.getElementById('fontSizeValue').textContent = '16px';
+  document.getElementById('lineHeightValue').textContent = '1.5';
+  document.getElementById('opacityValue').textContent = '100%';
+  document.getElementById('borderWidthValue').textContent = '0px';
+  document.getElementById('borderRadiusValue').textContent = '0px';
+  document.getElementById('scaleValue').textContent = '1';
+  document.getElementById('rotateValue').textContent = '0°';
+  document.getElementById('blurValue').textContent = '0px';
+  document.getElementById('brightnessValue').textContent = '100%';
+}
+
+// Subsection toggle functionality
+window.toggleSubsection = function(subsectionId) {
+  const content = document.getElementById(subsectionId);
+  const header = content.parentElement.querySelector('.subsection-header');
+  const icon = header.querySelector('.toggle-icon');
+  
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    icon.textContent = '▼';
+  } else {
+    content.style.display = 'none';
+    icon.textContent = '▶';
   }
 }
