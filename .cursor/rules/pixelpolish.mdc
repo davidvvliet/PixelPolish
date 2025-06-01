@@ -1,0 +1,111 @@
+---
+description: When mcp server PixelPolish is invoked
+globs: 
+alwaysApply: false
+---
+# PixelPolish MCP Tool Usage Guide
+
+## Overview
+PixelPolish is a Model Context Protocol (MCP) server that provides comprehensive UI analysis tools for AI assistants. It offers DOM analysis, CSS extraction, heuristics evaluation, screenshot capture, and AI-powered visual assessment.
+
+## Available Tools
+
+### 1. `mcp_pixelpolish_analyze_url`
+**Purpose:** Comprehensive UI analysis combining DOM, CSS, heuristics, screenshots, and AI assessment
+**Parameters:**
+- `url` (required): URL to analyze
+- `include_screenshot` (optional, default: true): Whether to include screenshot analysis
+- `ai_provider` (optional, default: "openai"): AI provider for analysis ("openai" or "anthropic")
+
+**Example:**
+```
+mcp_pixelpolish_analyze_url(url="https://example.com", include_screenshot=true, ai_provider="openai")
+```
+
+### 2. `mcp_pixelpolish_capture_screenshot`
+**Purpose:** Take high-quality screenshots of any URL
+**Parameters:**
+- `url` (required): URL to screenshot
+- `filename` (optional, default: "screenshot"): Name for the screenshot file
+
+### 3. `mcp_pixelpolish_analyze_dom_structure`
+**Purpose:** Extract and analyze DOM structure
+**Parameters:**
+- `url` (required): URL to analyze
+
+### 4. `mcp_pixelpolish_run_heuristics_analysis`
+**Purpose:** Run 190-point heuristics analysis
+**Parameters:**
+- `url` (required): URL to analyze
+
+### 5. `mcp_pixelpolish_serve_vite_app`
+**Purpose:** Serve the built UI Portal application from dist directory
+**Parameters:**
+- `port` (optional, default: 8080): Port to serve on
+- `dist_path` (optional, default: "/Users/earlpotters/Documents/ai-projects/PixelPolish/ui-portal/dist"): Path to dist directory
+
+### 6. `mcp_pixelpolish_stop_vite_app`
+**Purpose:** Stop the running HTTP server
+**Parameters:**
+- `random_string` (required): Dummy parameter (use any string)
+
+### 7. `mcp_pixelpolish_wait`
+**Purpose:** Wait and check for API requests from the UI Portal
+**Parameters:**
+- `duration_seconds` (optional, default: 50): Duration to wait in seconds
+- `message` (optional, default: "Waiting..."): Custom message to display
+
+## Special Workflow: UI Portal Server Management
+
+### IMPORTANT: When using `serve_vite_app`
+
+1. **After calling `mcp_pixelpolish_serve_vite_app`:**
+   - If the call returns success, you MUST call `mcp_pixelpolish_wait` exactly **5 times in a row**
+   - Each wait call should use default parameters (50 seconds duration)
+   - Do not exit or proceed with other tasks until all 5 wait calls are completed
+
+2. **Monitoring for API Requests:**
+   - The `wait` function monitors for incoming API requests from the UI Portal
+   - If you receive a JSON response that is NOT the regular timeout message, this means an API request was received
+   - When this happens, proceed with the commands/analysis specified in that JSON response
+
+3. **Example Workflow:**
+```
+# Step 1: Start the UI Portal server
+mcp_pixelpolish_serve_vite_app(port=8080)
+
+# Step 2: If successful, wait 5 times (required)
+mcp_pixelpolish_wait(duration_seconds=50, message="Waiting for API requests (1/5)")
+mcp_pixelpolish_wait(duration_seconds=50, message="Waiting for API requests (2/5)")
+mcp_pixelpolish_wait(duration_seconds=50, message="Waiting for API requests (3/5)")
+mcp_pixelpolish_wait(duration_seconds=50, message="Waiting for API requests (4/5)")
+mcp_pixelpolish_wait(duration_seconds=50, message="Waiting for API requests (5/5)")
+
+# Step 3: Only after all 5 waits, you may proceed with other tasks or exit
+```
+
+4. **Handling API Requests:**
+   - If any `wait` call returns a JSON response with API request data, stop the waiting sequence
+   - Process the received commands from the JSON response
+   - Execute the requested analysis or operations as specified in the API request data
+
+## Usage Tips
+
+1. **URL Analysis:** Use `analyze_url` for comprehensive analysis including visual assessment
+2. **Quick DOM Check:** Use `analyze_dom_structure` for fast DOM structure overview
+3. **Technical Scoring:** Use `run_heuristics_analysis` for detailed technical scoring
+4. **Visual Documentation:** Use `capture_screenshot` for visual documentation
+5. **Interactive Analysis:** Use `serve_vite_app` + `wait` pattern for interactive UI Portal sessions
+
+## Error Handling
+
+- Always check if the dist directory exists before calling `serve_vite_app`
+- Use `stop_vite_app` to clean up if server fails to start properly
+- The server automatically opens the browser when `serve_vite_app` succeeds
+- CORS is enabled for development purposes
+
+## Security Notes
+
+- The server includes directory traversal protection
+- SPA routing is supported (all routes serve index.html)
+- API endpoint `/api/submit` accepts POST requests for interactive analysis 
