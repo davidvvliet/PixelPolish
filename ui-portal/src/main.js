@@ -316,6 +316,9 @@ window.submitToMCP = async function() {
   // Show loading animation
   showSubmitAnimation(submitBtn);
   
+  // Show loading animation for exactly 1 second
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
   // Dynamically use the current port for the MCP endpoint
   const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
   const endpoint = `${window.location.protocol}//${window.location.hostname}:${currentPort}/api/submit`;
@@ -342,18 +345,18 @@ window.submitToMCP = async function() {
     if (response.ok) {
       const result = await response.json();
       
-      // Show success animation with sparkles
+      // Show success animation with sparkles immediately after API response
       showSuccessAnimation(submitBtn);
       
-      // Update status after a delay
+      // Show sparkles for 2 seconds, then show success message
       setTimeout(() => {
         updateStatus(`Successfully submitted to MCP server! Response: ${result.message || 'OK'}`, true);
         
-        // Reset button after 3 seconds
+        // Reset button after 3 more seconds
         setTimeout(() => {
           resetSubmitButton(submitBtn, originalBtnText, originalBtnStyle);
         }, 3000);
-      }, 1500);
+      }, 2000);
       
     } else {
       const errorText = await response.text();
@@ -383,19 +386,50 @@ function showSubmitAnimation(button) {
 function showSuccessAnimation(button) {
   button.innerHTML = `
     <div class="submit-success">
-      <div class="sparkles-container">
-        <div class="sparkle sparkle-1"></div>
-        <div class="sparkle sparkle-2"></div>
-        <div class="sparkle sparkle-3"></div>
-        <div class="sparkle sparkle-4"></div>
-        <div class="sparkle sparkle-5"></div>
-        <div class="sparkle sparkle-6"></div>
-      </div>
       <span class="success-text">Submitted</span>
     </div>
   `;
   button.style.background = 'linear-gradient(45deg, #4CAF50, #66BB6A)';
   button.style.boxShadow = '0 4px 15px rgba(76, 175, 80, 0.4)';
+  
+  // Get button position for sparkles
+  const buttonRect = button.getBoundingClientRect();
+  
+  // Create sparkles container that won't affect layout
+  const sparklesContainer = document.createElement('div');
+  sparklesContainer.className = 'sparkles-around-button';
+  sparklesContainer.style.cssText = `
+    position: fixed;
+    top: ${buttonRect.top - 40}px;
+    left: ${buttonRect.left - 40}px;
+    width: ${buttonRect.width + 80}px;
+    height: ${buttonRect.height + 80}px;
+    pointer-events: none;
+    z-index: 9999;
+  `;
+  
+  sparklesContainer.innerHTML = `
+    <div class="sparkle sparkle-around sparkle-1"></div>
+    <div class="sparkle sparkle-around sparkle-2"></div>
+    <div class="sparkle sparkle-around sparkle-3"></div>
+    <div class="sparkle sparkle-around sparkle-4"></div>
+    <div class="sparkle sparkle-around sparkle-5"></div>
+    <div class="sparkle sparkle-around sparkle-6"></div>
+    <div class="sparkle sparkle-around sparkle-7"></div>
+    <div class="sparkle sparkle-around sparkle-8"></div>
+    <div class="sparkle sparkle-around sparkle-9"></div>
+    <div class="sparkle sparkle-around sparkle-10"></div>
+  `;
+  
+  // Add to body to avoid layout interference
+  document.body.appendChild(sparklesContainer);
+  
+  // Remove sparkles after animation completes
+  setTimeout(() => {
+    if (sparklesContainer && sparklesContainer.parentElement) {
+      sparklesContainer.parentElement.removeChild(sparklesContainer);
+    }
+  }, 3000);
 }
 
 // Reset submit button to original state
