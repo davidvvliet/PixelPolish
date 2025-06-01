@@ -1,0 +1,136 @@
+---
+description: When pixelPolish MCP is invoked
+globs: 
+alwaysApply: false
+---
+# PixelPolish MCP Server Cursor Rule
+
+## Auto-Serve and Wait for UI/UX Modification Requests
+
+When the user mentions "pixelpolish", "ui analysis", "serve ui portal", or requests UI/UX modifications, automatically execute this workflow:
+
+### 1. Initial Server Setup
+```
+Call MCP tool: serve_vite_app
+Parameters:
+- port: 8080 (default)
+- dist_path: "../mcp_typescript/static_ui" (default)
+```
+
+### 2. Consecutive Wait Loop (5 iterations)
+**IMMEDIATELY** after `serve_vite_app` succeeds, automatically execute the following wait commands consecutively:
+
+**Wait Attempt 1:**
+```
+Call MCP tool: wait
+Parameters:
+- duration_seconds: 50
+- message: "Waiting for UI Portal API requests... (attempt 1/5)"
+```
+
+**Wait Attempt 2 (if attempt 1 times out):**
+```
+Call MCP tool: wait
+Parameters:
+- duration_seconds: 50
+- message: "Waiting for UI Portal API requests... (attempt 2/5)"
+```
+
+**Wait Attempt 3 (if attempt 2 times out):**
+```
+Call MCP tool: wait
+Parameters:
+- duration_seconds: 50
+- message: "Waiting for UI Portal API requests... (attempt 3/5)"
+```
+
+**Wait Attempt 4 (if attempt 3 times out):**
+```
+Call MCP tool: wait
+Parameters:
+- duration_seconds: 50
+- message: "Waiting for UI Portal API requests... (attempt 4/5)"
+```
+
+**Wait Attempt 5 (if attempt 4 times out):**
+```
+Call MCP tool: wait
+Parameters:
+- duration_seconds: 50
+- message: "Waiting for UI Portal API requests... (attempt 5/5 - FINAL)"
+```
+
+**Break Conditions:**
+- **STOP IMMEDIATELY** if any `wait` call returns API request data (not a timeout message)
+- Only continue to next wait attempt if previous attempt returned a timeout
+- After 5 consecutive timeout attempts, stop waiting but keep server running
+- If server fails to start, do not begin wait loop
+
+### 3. Process API Request
+When a valid API request is received from the `wait` tool:
+
+1. **Extract the JSON payload** from the response
+2. **Parse the modification prompt** from the request data
+3. **Execute the UI/UX modifications** as requested in the JSON prompt
+4. **Provide detailed feedback** on changes made
+
+### 4. Response Format
+Structure responses as:
+
+```markdown
+## PixelPolish UI Portal Status
+✅ Server started at http://localhost:8080
+🔄 Monitoring for API requests (attempt X/5)
+
+## API Request Received
+**Timestamp:** [timestamp]
+**Request Data:**
+```json
+[parsed json data]
+```
+
+## UI/UX Modifications Applied
+[detailed description of changes made based on the prompt]
+
+## Next Steps
+[recommendations or follow-up actions]
+```
+
+### 5. Error Handling
+- If server fails to start: Report error and suggest troubleshooting
+- If 5 wait attempts timeout: Inform user no requests received, keep server running
+- If invalid JSON received: Parse what's possible and ask for clarification
+
+### 6. Keywords that Trigger This Rule
+- "pixelpolish"
+- "serve ui portal" 
+- "start pixel polish"
+- "ui analysis portal"
+- "wait for ui requests"
+- "modify ui based on analysis"
+
+### 7. Automatic Sequential Actions
+Execute these MCP tool calls in **EXACT ORDER** without user intervention:
+
+1. **FIRST:** Call `serve_vite_app` with specified parameters
+2. **IMMEDIATELY AFTER:** If server starts successfully, begin consecutive wait calls
+3. **THEN:** Call `wait` (attempt 1/5) - if timeout, proceed to step 4
+4. **THEN:** Call `wait` (attempt 2/5) - if timeout, proceed to step 5  
+5. **THEN:** Call `wait` (attempt 3/5) - if timeout, proceed to step 6
+6. **THEN:** Call `wait` (attempt 4/5) - if timeout, proceed to step 7
+7. **THEN:** Call `wait` (attempt 5/5) - final attempt
+8. **IF ANY WAIT RETURNS API DATA:** Skip remaining wait calls and process the request immediately
+
+**Key Points:**
+- Do NOT wait for user input between these calls
+- Execute each `wait` call immediately after the previous one times out
+- Stop the sequence early if any `wait` call returns API request data
+- Keep server running regardless of wait results
+
+### 8. Advanced Features
+- **Concurrent Request Handling:** If multiple API requests come in during wait periods, process them in order
+- **Request Validation:** Ensure API requests contain valid UI/UX modification prompts
+- **Context Awareness:** Use analysis data from the API request to inform UI modifications
+- **Iterative Improvements:** After making changes, offer to wait for additional requests
+
+This rule automates the entire workflow from server startup to processing UI/UX modification requests from the PixelPolish portal.
