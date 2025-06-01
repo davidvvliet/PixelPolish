@@ -11,7 +11,7 @@ document.querySelector('#app').innerHTML = `
       <div class="control-panel">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <h2>Control Panel</h2>
-          <button class="action-btn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit to MCP</button>
+          <button class="action-btn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit</button>
         </div>
         
         <!-- Quick Actions -->
@@ -720,7 +720,9 @@ window.importState = function() {
 
 // Submit to MCP Server function
 window.submitToMCP = async function() {
-  const endpoint = 'http://localhost:3000/api/submit'; // Default endpoint
+  // Dynamically use the current port for the MCP endpoint
+  const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+  const endpoint = `${window.location.protocol}//${window.location.hostname}:${currentPort}/api/submit`;
   
   // Prepare the comprehensive payload for LLM processing
   const payload = {
