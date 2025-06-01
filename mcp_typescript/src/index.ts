@@ -390,7 +390,7 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
   private async handleServeViteApp(args: any) {
     const { 
       port = 8080,
-      dist_path = '../ui-portal/dist'
+      dist_path = './static_ui/dist'
     } = args;
 
     // Check if server is already running
