@@ -32,32 +32,43 @@ body {
 }
 
 h1 {
-  font-size: 2.5em;
-  line-height: 1.1;
-  margin: 0;
+  display: none;
 }
 
 #app {
   max-width: none;
   width: 100%;
   margin: 0;
-  padding: 1rem;
+  padding: 0;
   text-align: center;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
-  margin-bottom: 1rem;
+  background: #1a1a1a;
+  border-bottom: 2px solid #646cff;
+  padding: 1.5rem 0rem 0.5rem 0rem;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: 60px;
 }
 
 .main-content {
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
   align-items: flex-start;
   text-align: left;
+  margin-top: 140px;
+  padding: 1rem;
+  flex: 1;
 }
 
 .control-panel {
@@ -220,8 +231,8 @@ h1 {
   filter: drop-shadow(0 0 2em #f7df1eaa);
 }
 .logo.pixelpolish {
-  height: 16em;
-  padding: 0.5rem;
+  height: 11em;
+  padding: 1;
   margin: 0;
 }
 .logo.pixelpolish:hover {

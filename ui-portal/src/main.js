@@ -4,9 +4,7 @@ import pixelPolishLogo from '/pixelpolish-logo.webp'
 document.querySelector('#app').innerHTML = `
   <div>
     <div class="header">
-      <a href="#" target="_blank">
-        <img src="${pixelPolishLogo}" class="logo pixelpolish" alt="PixelPolish logo" />
-      </a>
+      <img src="${pixelPolishLogo}" class="logo pixelpolish" alt="PixelPolish logo" />
     </div>
 
     <div class="main-content">
@@ -120,11 +118,11 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="./example.html" 
+          src="https://example.com" 
           width="800" 
           height="600" 
           frameborder="0"
-          title="Local Example Domain">
+          title="Example.com">
         </iframe>
       </div>
     </div>
