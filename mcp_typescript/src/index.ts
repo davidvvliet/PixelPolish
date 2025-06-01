@@ -173,7 +173,7 @@ class PixelPolishMCPServer {
               type: 'object',
               properties: {
                 port: { type: 'number', description: 'Port to serve on', default: 8080 },
-                dist_path: { type: 'string', description: 'Path to dist directory', default: '/Users/earlpotters/Documents/ai-projects/PixelPolish/ui-portal/dist' },
+                dist_path: { type: 'string', description: 'Path to dist directory', default: '../ui-portal/dist' },
               },
               required: [],
             },
@@ -390,7 +390,7 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
   private async handleServeViteApp(args: any) {
     const { 
       port = 8080,
-      dist_path = '/Users/earlpotters/Documents/ai-projects/PixelPolish/ui-portal/dist'
+      dist_path = '../ui-portal/dist'
     } = args;
 
     // Check if server is already running

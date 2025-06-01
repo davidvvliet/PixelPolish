@@ -9,7 +9,10 @@ document.querySelector('#app').innerHTML = `
 
     <div class="main-content">
       <div class="control-panel">
-        <h2>Control Panel</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2>Control Panel</h2>
+          <button class="action-btn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit</button>
+        </div>
         
         <!-- Quick Actions -->
         <div class="control-section">
@@ -167,15 +170,7 @@ document.querySelector('#app').innerHTML = `
               <p class="info-text">Changes are automatically saved to browser storage and restored on page refresh.</p>
             </div>
             <div class="button-group">
-              <button class="action-btn" onclick="applySavedState()">Restore Changes</button>
-              <button class="action-btn danger" onclick="clearSavedState()">Reset All</button>
-            </div>
-            <div class="form-group">
-              <label>Export/Import State:</label>
-              <div class="button-group">
-                <button class="action-btn" onclick="exportState()">Export</button>
-                <button class="action-btn" onclick="importState()">Import</button>
-              </div>
+              <button class="action-btn danger" onclick="clearSavedState()">Reset Changes</button>
             </div>
           </div>
         </div>
@@ -721,6 +716,213 @@ window.importState = function() {
     }
   };
   input.click();
+}
+
+// Submit to MCP Server function
+window.submitToMCP = async function() {
+  // Dynamically use the current port for the MCP endpoint
+  const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+  const endpoint = `${window.location.protocol}//${window.location.hostname}:${currentPort}/api/submit`;
+  
+  // Prepare the comprehensive payload for LLM processing
+  const payload = {
+    timestamp: new Date().toISOString(),
+    url: document.getElementById('targetIframe').src,
+    
+    // Raw changes data (exactly like the export JSON)
+    changes: {
+      textChanges: savedState.textChanges,
+      styleChanges: savedState.styleChanges,
+      htmlChanges: savedState.htmlChanges,
+      classChanges: savedState.classChanges,
+      hiddenElements: savedState.hiddenElements
+    },
+    
+    // Detailed descriptions for LLM understanding
+    changeDescriptions: generateDetailedDescriptions(),
+    
+    // Summary statistics
+    summary: generateChangeSummary(),
+    
+    // Context about the page being modified
+    pageContext: {
+      title: 'Interactive Demo Website',
+      type: 'demo-page',
+      mainElements: [
+        { selector: '#main-title', type: 'heading', description: 'Main page title' },
+        { selector: '#description', type: 'text', description: 'Page description paragraph' },
+        { selector: '.demo-section', type: 'container', description: 'Demo section with examples' },
+        { selector: '#section-title', type: 'heading', description: 'Section title' },
+        { selector: '#demo-text', type: 'text', description: 'Demo text paragraph' },
+        { selector: '#highlight-text', type: 'text', description: 'Highlighted text span' },
+        { selector: '#dynamic-content', type: 'container', description: 'Dynamic content area' },
+        { selector: '#demo-list', type: 'container', description: 'Demo list container' },
+        { selector: '#footer', type: 'container', description: 'Footer section' }
+      ]
+    },
+    
+    // Actionable instructions for LLM
+    instructions: generateLLMInstructions()
+  };
+  
+  try {
+    updateStatus('Submitting detailed changes to MCP server...', true);
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload, null, 2)
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      updateStatus(`Successfully submitted to MCP server! Response: ${result.message || 'OK'}`, true);
+    } else {
+      const errorText = await response.text();
+      updateStatus(`MCP server error (${response.status}): ${errorText}`, false);
+    }
+  } catch (error) {
+    updateStatus(`Failed to connect to MCP server: ${error.message}`, false);
+  }
+}
+
+// Generate detailed descriptions for each change type
+function generateDetailedDescriptions() {
+  const descriptions = {
+    textModifications: [],
+    styleModifications: [],
+    contentModifications: [],
+    classModifications: [],
+    hiddenElements: [],
+    overallEffect: ""
+  };
+  
+  // Text changes descriptions
+  Object.keys(savedState.textChanges).forEach(selector => {
+    descriptions.textModifications.push({
+      selector: selector,
+      newText: savedState.textChanges[selector],
+      action: `Changed text content of "${selector}" to "${savedState.textChanges[selector]}"`
+    });
+  });
+  
+  // Style changes descriptions
+  Object.keys(savedState.styleChanges).forEach(selector => {
+    Object.keys(savedState.styleChanges[selector]).forEach(property => {
+      const value = savedState.styleChanges[selector][property];
+      descriptions.styleModifications.push({
+        selector: selector,
+        property: property,
+        value: value,
+        action: `Applied CSS style "${property}: ${value}" to "${selector}"`
+      });
+    });
+  });
+  
+  // HTML changes descriptions
+  Object.keys(savedState.htmlChanges).forEach(selector => {
+    descriptions.contentModifications.push({
+      selector: selector,
+      newHTML: savedState.htmlChanges[selector],
+      action: `Replaced HTML content of "${selector}" with custom HTML`
+    });
+  });
+  
+  // Class changes descriptions
+  Object.keys(savedState.classChanges).forEach(selector => {
+    savedState.classChanges[selector].forEach(className => {
+      descriptions.classModifications.push({
+        selector: selector,
+        className: className,
+        action: `Added CSS class "${className}" to "${selector}"`
+      });
+    });
+  });
+  
+  // Hidden elements descriptions
+  savedState.hiddenElements.forEach(element => {
+    descriptions.hiddenElements.push({
+      selector: element.selector,
+      elementType: element.tagName,
+      action: `Hidden element "${element.selector}" (${element.tagName})`
+    });
+  });
+  
+  // Generate overall effect description
+  const totalChanges = descriptions.textModifications.length + 
+                      descriptions.styleModifications.length + 
+                      descriptions.contentModifications.length + 
+                      descriptions.classModifications.length + 
+                      descriptions.hiddenElements.length;
+  
+  descriptions.overallEffect = `Applied ${totalChanges} total modifications to the webpage, including ${descriptions.textModifications.length} text changes, ${descriptions.styleModifications.length} style changes, ${descriptions.contentModifications.length} content replacements, ${descriptions.classModifications.length} class additions, and ${descriptions.hiddenElements.length} hidden elements.`;
+  
+  return descriptions;
+}
+
+// Generate LLM-friendly instructions
+function generateLLMInstructions() {
+  const instructions = {
+    purpose: "These changes represent DOM modifications made through the PixelPolish interface",
+    howToUse: "Use this data to understand what changes were applied and potentially recreate or modify them",
+    changeTypes: {
+      textChanges: "Direct text content replacements - apply these by setting element.textContent",
+      styleChanges: "CSS style modifications - apply these by setting element.style[property] = value",
+      htmlChanges: "HTML content replacements - apply these by setting element.innerHTML",
+      classChanges: "CSS class additions - apply these by using element.classList.add(className)",
+      hiddenElements: "Elements that were hidden - apply these by setting element.style.display = 'none'"
+    },
+    context: "All changes were made to an interactive demo page with standard HTML elements",
+    suggestedActions: generateSuggestedActions()
+  };
+  
+  return instructions;
+}
+
+function generateSuggestedActions() {
+  const actions = [];
+  
+  if (Object.keys(savedState.textChanges).length > 0) {
+    actions.push("Apply text modifications to update content messaging");
+  }
+  
+  if (Object.keys(savedState.styleChanges).length > 0) {
+    actions.push("Apply style changes to modify visual appearance");
+  }
+  
+  if (Object.keys(savedState.htmlChanges).length > 0) {
+    actions.push("Replace HTML content to add dynamic elements");
+  }
+  
+  if (Object.keys(savedState.classChanges).length > 0) {
+    actions.push("Add CSS classes for styling or behavioral changes");
+  }
+  
+  if (savedState.hiddenElements.length > 0) {
+    actions.push("Hide specified elements to modify page layout");
+  }
+  
+  return actions;
+}
+
+// Generate a summary of changes for the MCP server
+function generateChangeSummary() {
+  const summary = {
+    totalChanges: 0,
+    textChanges: Object.keys(savedState.textChanges).length,
+    styleChanges: Object.keys(savedState.styleChanges).length,
+    htmlChanges: Object.keys(savedState.htmlChanges).length,
+    classChanges: Object.keys(savedState.classChanges).length,
+    hiddenElements: savedState.hiddenElements.length
+  };
+  
+  summary.totalChanges = summary.textChanges + summary.styleChanges + 
+                        summary.htmlChanges + summary.classChanges + summary.hiddenElements;
+  
+  return summary;
 }
 
 // Collapsible sections functionality
