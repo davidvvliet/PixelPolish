@@ -14,7 +14,7 @@ When the user mentions "pixelpolish", "ui analysis", "serve ui portal", or reque
 Call MCP tool: serve_vite_app
 Parameters:
 - port: 8080 (default)
-- dist_path: "../mcp_typescript/static_ui" (default)
+- dist_path: "/Users/earlpotters/Documents/ai-projects/PixelPolish/ui-portal/dist" (default)
 ```
 
 ### 2. Consecutive Wait Loop (5 iterations)
@@ -66,13 +66,36 @@ Parameters:
 - After 5 consecutive timeout attempts, stop waiting but keep server running
 - If server fails to start, do not begin wait loop
 
-### 3. Process API Request
+### 3. Process API Request and Modify HTML File
 When a valid API request is received from the `wait` tool:
 
 1. **Extract the JSON payload** from the response
-2. **Parse the modification prompt** from the request data
-3. **Execute the UI/UX modifications** as requested in the JSON prompt
-4. **Provide detailed feedback** on changes made
+2. **Parse the UI modification data** with expected structure:
+   ```json
+   {
+     "url": "http://localhost:8080/landing-page.html",
+     "changes": {
+       "textChanges": { "#selector": "new text" },
+       "styleChanges": { 
+         "selector": { "property": "value" } 
+       },
+       "htmlChanges": { "#selector": "<new html>" },
+       "classChanges": { "#selector": ["class1", "class2"] },
+       "hiddenElements": ["#selector1", "#selector2"]
+     },
+     "changeDescriptions": { ... }
+   }
+   ```
+
+3. **Modify `./ui-portal/landing-page.html` file directly** by applying:
+   - **Text Changes:** Update text content for specified selectors
+   - **Style Changes:** Apply inline CSS styles or update style attributes
+   - **HTML Changes:** Replace HTML content within specified elements
+   - **Class Changes:** Add/remove CSS classes
+   - **Hidden Elements:** Add `style="display: none"` or remove elements
+
+4. **Write the updated HTML back to file** - Replace the old content completely
+5. **Provide detailed feedback** on file modifications made
 
 ### 4. Response Format
 Structure responses as:
@@ -84,16 +107,35 @@ Structure responses as:
 
 ## API Request Received
 **Timestamp:** [timestamp]
+**Target File:** ./ui-portal/landing-page.html
 **Request Data:**
 ```json
 [parsed json data]
 ```
 
-## UI/UX Modifications Applied
-[detailed description of changes made based on the prompt]
+## File Modifications Applied
+**File Updated:** `./ui-portal/landing-page.html`
+
+### Changes Made:
+- **Text Changes:** X modifications
+  - Updated #main-title: "New text content"
+- **Style Changes:** X modifications  
+  - Applied backgroundColor: #8059e4 to body
+  - Applied backgroundColor: #ff4444 to #highlight-text
+- **HTML Changes:** X modifications
+  - Replaced content in #dynamic-content
+- **Class Changes:** X modifications
+- **Hidden Elements:** X elements hidden/removed
+
+### File Status:
+✅ HTML file successfully updated and saved
+🔄 Changes are now live on the server
+🌐 Refresh http://localhost:8080/landing-page.html to see updates
 
 ## Next Steps
-[recommendations or follow-up actions]
+- Refresh your browser to see the changes
+- Continue waiting for additional modification requests
+- Use browser dev tools to verify changes applied correctly
 ```
 
 ### 5. Error Handling
@@ -128,9 +170,33 @@ Execute these MCP tool calls in **EXACT ORDER** without user intervention:
 - Keep server running regardless of wait results
 
 ### 8. Advanced Features
-- **Concurrent Request Handling:** If multiple API requests come in during wait periods, process them in order
-- **Request Validation:** Ensure API requests contain valid UI/UX modification prompts
-- **Context Awareness:** Use analysis data from the API request to inform UI modifications
-- **Iterative Improvements:** After making changes, offer to wait for additional requests
+- **File System Integration:** Directly modify `./ui-portal/landing-page.html` based on JSON input
+- **Live Updates:** Changes are immediately reflected when browser is refreshed
+- **Comprehensive Change Support:**
+  - Text content updates via `textChanges`
+  - CSS style application via `styleChanges` 
+  - HTML content replacement via `htmlChanges`
+  - CSS class management via `classChanges`
+  - Element visibility control via `hiddenElements`
+- **JSON Structure Parsing:** Handle the specific format from UI Portal API
+- **File Backup:** Consider backing up original file before modifications
+- **Change Validation:** Verify selectors exist before applying changes
+- **Error Recovery:** Handle malformed JSON or invalid selectors gracefully
+- **Iterative Improvements:** After making changes, continue waiting for additional requests
 
-This rule automates the entire workflow from server startup to processing UI/UX modification requests from the PixelPolish portal.
+**Expected JSON Format:**
+```json
+{
+  "url": "http://localhost:8080/landing-page.html",
+  "changes": {
+    "textChanges": { "#selector": "new text" },
+    "styleChanges": { "selector": { "property": "value" } },
+    "htmlChanges": { "#selector": "<new html>" },
+    "classChanges": { "#selector": ["class1", "class2"] },
+    "hiddenElements": ["#selector1", "#selector2"]
+  },
+  "changeDescriptions": { "overallEffect": "description" }
+}
+```
+
+This rule automates the entire workflow from server startup to processing UI modification requests and applying them directly to the HTML file.

@@ -97,7 +97,7 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="./landing-page.html" 
+          src="http://localhost:8081/landing-page" 
           width="900" 
           height="700" 
           frameborder="0"
