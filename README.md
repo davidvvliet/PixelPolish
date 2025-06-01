@@ -14,7 +14,7 @@ PixelPolish is a comprehensive web development platform that combines real-time 
 
 ### AI-Powered Natural Language Interface
 - **Conversational Editing**: Describe changes in plain English (e.g., "make this text red and bold")
-- **OpenAI Integration**: Powered by GPT-3.5-turbo for intelligent change interpretation
+- **AI Integration**: Powered by GPT-4o and Claude for intelligent change interpretation
 - **Context-Aware Processing**: AI understands element context and applies appropriate modifications
 - **Multi-Action Support**: Single commands can trigger multiple related changes
 
