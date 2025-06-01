@@ -4,108 +4,179 @@ import pixelPolishLogo from '/pixelpolish-logo.webp'
 document.querySelector('#app').innerHTML = `
   <div>
     <div class="header">
-      <a href="#" target="_blank">
-        <img src="${pixelPolishLogo}" class="logo pixelpolish" alt="PixelPolish logo" />
-      </a>
+      <img src="${pixelPolishLogo}" class="logo pixelpolish" alt="PixelPolish logo" />
     </div>
 
     <div class="main-content">
       <div class="control-panel">
-        <h2>🎛️ Control Panel</h2>
+        <h2>Control Panel</h2>
         
         <!-- Quick Actions -->
         <div class="control-section">
-          <h3>Quick Actions</h3>
-          <div class="quick-actions">
-            <button class="action-btn" onclick="changeTitle()">Change Title</button>
-            <button class="action-btn" onclick="changeBackground()">Change Background</button>
-            <button class="action-btn" onclick="addContent()">Add Content</button>
-            <button class="action-btn" onclick="highlightText()">Highlight Text</button>
-            <button class="action-btn" onclick="hideSection()">Hide Section</button>
-            <button class="action-btn" onclick="showSection()">Show Section</button>
+          <h3 class="section-header collapsed" onclick="toggleSection('quickActions')">
+            <span>Quick Actions</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="quickActions" style="display: none;">
+            <div class="quick-actions">
+              <button class="action-btn" onclick="changeTitle()">Change Title</button>
+              <button class="action-btn" onclick="changeBackground()">Change Background</button>
+              <button class="action-btn" onclick="addContent()">Add Content</button>
+              <button class="action-btn" onclick="highlightText()">Highlight Text</button>
+              <button class="action-btn" onclick="hideSection()">Hide Section</button>
+              <button class="action-btn" onclick="showSection()">Show Section</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected Element -->
+        <div class="control-section" id="selectedElementSection" style="display: none;">
+          <h3 class="section-header collapsed" onclick="toggleSection('selectedElement')">
+            <span>Selected Element</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="selectedElement" style="display: none;">
+            <div id="elementInfo" class="element-info">
+              <p><strong>Tag:</strong> <span id="elementTag">-</span></p>
+              <p><strong>ID:</strong> <span id="elementId">-</span></p>
+              <p><strong>Selector:</strong> <span id="elementSelector">-</span></p>
+              <p><strong>Text:</strong> <span id="elementText">-</span></p>
+            </div>
+            <div class="quick-actions">
+              <button class="action-btn" onclick="quickEditText()">Edit Text</button>
+              <button class="action-btn" onclick="quickChangeColor()">Change Color</button>
+              <button class="action-btn" onclick="quickChangeBg()">Change Background</button>
+              <button class="action-btn" onclick="quickHide()">Hide</button>
+              <button class="action-btn" onclick="quickHighlight()">Highlight</button>
+              <button class="action-btn" onclick="quickRemoveHighlight()">Remove Highlight</button>
+            </div>
           </div>
         </div>
 
         <!-- Text Manipulation -->
         <div class="control-section">
-          <h3>Text Manipulation</h3>
-          <div class="form-group">
-            <label>Element Selector:</label>
-            <select id="textSelector">
-              <option value="#main-title">Main Title</option>
-              <option value="#description">Description</option>
-              <option value="#section-title">Section Title</option>
-              <option value="#demo-text">Demo Text</option>
-              <option value="#highlight-text">Highlighted Text</option>
-            </select>
+          <h3 class="section-header collapsed" onclick="toggleSection('textManipulation')">
+            <span>Text Manipulation</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="textManipulation" style="display: none;">
+            <div class="form-group">
+              <label>Element Selector:</label>
+              <select id="textSelector">
+                <option value="#main-title">Main Title</option>
+                <option value="#description">Description</option>
+                <option value="#section-title">Section Title</option>
+                <option value="#demo-text">Demo Text</option>
+                <option value="#highlight-text">Highlighted Text</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>New Text:</label>
+              <input type="text" id="newText" placeholder="Enter new text...">
+            </div>
+            <button class="action-btn" onclick="changeElementText()">Update Text</button>
           </div>
-          <div class="form-group">
-            <label>New Text:</label>
-            <input type="text" id="newText" placeholder="Enter new text...">
-          </div>
-          <button class="action-btn" onclick="changeElementText()">Update Text</button>
         </div>
 
         <!-- Style Manipulation -->
         <div class="control-section">
-          <h3>Style Manipulation</h3>
-          <div class="form-group">
-            <label>Element Selector:</label>
-            <input type="text" id="styleSelector" placeholder="e.g., #main-title, .highlight, body">
+          <h3 class="section-header collapsed" onclick="toggleSection('styleManipulation')">
+            <span>Style Manipulation</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="styleManipulation" style="display: none;">
+            <div class="form-group">
+              <label>Element Selector:</label>
+              <input type="text" id="styleSelector" placeholder="e.g., #main-title, .highlight, body">
+            </div>
+            <div class="form-group">
+              <label>CSS Property:</label>
+              <select id="cssProperty">
+                <option value="color">Text Color</option>
+                <option value="backgroundColor">Background Color</option>
+                <option value="fontSize">Font Size</option>
+                <option value="fontWeight">Font Weight</option>
+                <option value="border">Border</option>
+                <option value="padding">Padding</option>
+                <option value="margin">Margin</option>
+                <option value="transform">Transform</option>
+                <option value="opacity">Opacity</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Value:</label>
+              <input type="text" id="cssValue" placeholder="e.g., red, 20px, bold">
+            </div>
+            <button class="action-btn" onclick="changeElementStyle()">Apply Style</button>
           </div>
-          <div class="form-group">
-            <label>CSS Property:</label>
-            <select id="cssProperty">
-              <option value="color">Text Color</option>
-              <option value="backgroundColor">Background Color</option>
-              <option value="fontSize">Font Size</option>
-              <option value="fontWeight">Font Weight</option>
-              <option value="border">Border</option>
-              <option value="padding">Padding</option>
-              <option value="margin">Margin</option>
-              <option value="transform">Transform</option>
-              <option value="opacity">Opacity</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Value:</label>
-            <input type="text" id="cssValue" placeholder="e.g., red, 20px, bold">
-          </div>
-          <button class="action-btn" onclick="changeElementStyle()">Apply Style</button>
         </div>
 
         <!-- Content Manipulation -->
         <div class="control-section">
-          <h3>Content Manipulation</h3>
-          <div class="form-group">
-            <label>Target:</label>
-            <select id="contentTarget">
-              <option value="#dynamic-content">Dynamic Content Area</option>
-              <option value="#demo-list">Demo List</option>
-              <option value="#footer">Footer</option>
-            </select>
+          <h3 class="section-header collapsed" onclick="toggleSection('contentManipulation')">
+            <span>Content Manipulation</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="contentManipulation" style="display: none;">
+            <div class="form-group">
+              <label>Target:</label>
+              <select id="contentTarget">
+                <option value="#dynamic-content">Dynamic Content Area</option>
+                <option value="#demo-list">Demo List</option>
+                <option value="#footer">Footer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>HTML Content:</label>
+              <textarea id="htmlContent" placeholder="Enter HTML content..."></textarea>
+            </div>
+            <button class="action-btn" onclick="updateContent()">Update Content</button>
           </div>
-          <div class="form-group">
-            <label>HTML Content:</label>
-            <textarea id="htmlContent" placeholder="Enter HTML content..."></textarea>
-          </div>
-          <button class="action-btn" onclick="updateContent()">Update Content</button>
         </div>
 
         <!-- Advanced Controls -->
         <div class="control-section">
-          <h3>Advanced Controls</h3>
-          <div class="form-group">
-            <label>CSS Class to Add/Remove:</label>
-            <input type="text" id="cssClass" placeholder="e.g., highlight, hidden">
+          <h3 class="section-header collapsed" onclick="toggleSection('advancedControls')">
+            <span>Advanced Controls</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="advancedControls" style="display: none;">
+            <div class="form-group">
+              <label>CSS Class to Add/Remove:</label>
+              <input type="text" id="cssClass" placeholder="e.g., highlight, hidden">
+            </div>
+            <div class="form-group">
+              <label>Target Selector:</label>
+              <input type="text" id="classTarget" placeholder="e.g., #main-title">
+            </div>
+            <div class="button-group">
+              <button class="action-btn" onclick="addClass()">Add Class</button>
+              <button class="action-btn" onclick="removeClass()">Remove Class</button>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Target Selector:</label>
-            <input type="text" id="classTarget" placeholder="e.g., #main-title">
-          </div>
-          <div class="button-group">
-            <button class="action-btn" onclick="addClass()">Add Class</button>
-            <button class="action-btn" onclick="removeClass()">Remove Class</button>
+        </div>
+
+        <!-- State Management -->
+        <div class="control-section">
+          <h3 class="section-header collapsed" onclick="toggleSection('stateManagement')">
+            <span>State Management</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="stateManagement" style="display: none;">
+            <div class="form-group">
+              <p class="info-text">Changes are automatically saved to browser storage and restored on page refresh.</p>
+            </div>
+            <div class="button-group">
+              <button class="action-btn" onclick="applySavedState()">Restore Changes</button>
+              <button class="action-btn danger" onclick="clearSavedState()">Reset All</button>
+            </div>
+            <div class="form-group">
+              <label>Export/Import State:</label>
+              <div class="button-group">
+                <button class="action-btn" onclick="exportState()">Export</button>
+                <button class="action-btn" onclick="importState()">Import</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -114,17 +185,31 @@ document.querySelector('#app').innerHTML = `
           <h3>Status</h3>
           <div id="status" class="status-area">Ready to manipulate DOM...</div>
         </div>
+
+        <!-- Hidden Elements -->
+        <div class="control-section" id="hiddenElementsSection" style="display: none;">
+          <h3 class="section-header collapsed" onclick="toggleSection('hiddenElements')">
+            <span>Hidden Elements</span>
+            <span class="toggle-icon">▶</span>
+          </h3>
+          <div class="section-content" id="hiddenElements" style="display: none;">
+            <div class="form-group">
+              <button class="action-btn" onclick="showAllHidden()">Show All Hidden</button>
+            </div>
+            <div id="hiddenElementsList"></div>
+          </div>
+        </div>
       </div>
 
       <div class="iframe-container">
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="./example.html" 
-          width="800" 
-          height="600" 
+          src="./demo-page.html" 
+          width="900" 
+          height="700" 
           frameborder="0"
-          title="Local Example Domain">
+          title="Interactive Demo Page">
         </iframe>
       </div>
     </div>
@@ -133,28 +218,188 @@ document.querySelector('#app').innerHTML = `
 
 // DOM Manipulation Functions
 let targetIframe;
+let selectedElementInfo = null;
+let hiddenElements = [];
+let savedState = {
+  textChanges: {},
+  styleChanges: {},
+  htmlChanges: {},
+  classChanges: {},
+  hiddenElements: []
+};
 
-// Wait for iframe to load
-window.addEventListener('load', () => {
-  targetIframe = document.getElementById('targetIframe');
-  
-  // Listen for messages from iframe
-  window.addEventListener('message', (event) => {
-    if (event.data.type === 'DOM_MANIPULATION_RESULT') {
-      updateStatus(event.data.message, event.data.success);
-    }
+// Load saved state from localStorage
+function loadSavedState() {
+  const saved = localStorage.getItem('pixelpolish-state');
+  if (saved) {
+    savedState = JSON.parse(saved);
+    hiddenElements = savedState.hiddenElements || [];
+    updateHiddenElementsList();
+  }
+}
+
+// Save current state to localStorage
+function saveCurrentState() {
+  savedState.hiddenElements = hiddenElements;
+  localStorage.setItem('pixelpolish-state', JSON.stringify(savedState));
+  updateStatus('Changes saved to browser storage', true);
+}
+
+// Apply saved state to the demo page
+function applySavedState() {
+  // Apply text changes
+  Object.keys(savedState.textChanges).forEach(selector => {
+    sendMessageToIframe({
+      action: 'changeText',
+      selector: selector,
+      content: savedState.textChanges[selector]
+    });
   });
-});
 
+  // Apply style changes
+  Object.keys(savedState.styleChanges).forEach(selector => {
+    Object.keys(savedState.styleChanges[selector]).forEach(property => {
+      sendMessageToIframe({
+        action: 'changeStyle',
+        selector: selector,
+        property: property,
+        value: savedState.styleChanges[selector][property]
+      });
+    });
+  });
+
+  // Apply HTML changes
+  Object.keys(savedState.htmlChanges).forEach(selector => {
+    sendMessageToIframe({
+      action: 'changeHTML',
+      selector: selector,
+      content: savedState.htmlChanges[selector]
+    });
+  });
+
+  // Apply class changes
+  Object.keys(savedState.classChanges).forEach(selector => {
+    savedState.classChanges[selector].forEach(className => {
+      sendMessageToIframe({
+        action: 'addClass',
+        selector: selector,
+        value: className
+      });
+    });
+  });
+
+  // Apply hidden elements
+  hiddenElements.forEach(element => {
+    sendMessageToIframe({
+      action: 'hide',
+      selector: element.selector
+    });
+  });
+}
+
+// Clear all saved state
+window.clearSavedState = function() {
+  if (confirm('Are you sure you want to clear all saved changes? This will reset everything to the original state.')) {
+    localStorage.removeItem('pixelpolish-state');
+    savedState = {
+      textChanges: {},
+      styleChanges: {},
+      htmlChanges: {},
+      classChanges: {},
+      hiddenElements: []
+    };
+    hiddenElements = [];
+    updateHiddenElementsList();
+    location.reload(); // Reload to reset everything
+  }
+}
+
+// Enhanced sendMessageToIframe that saves state
 function sendMessageToIframe(data) {
   if (targetIframe && targetIframe.contentWindow) {
     targetIframe.contentWindow.postMessage({
       type: 'DOM_MANIPULATION',
       ...data
     }, '*');
+    
+    // Save the change to local state (skip show/hide as they are handled separately)
+    if (data.action !== 'show' && data.action !== 'hide') {
+      saveChangeToState(data);
+    }
   } else {
     updateStatus('Error: Iframe not loaded', false);
   }
+}
+
+function saveChangeToState(data) {
+  const { action, selector, property, value, content } = data;
+  
+  switch (action) {
+    case 'changeText':
+      savedState.textChanges[selector] = content;
+      break;
+    case 'changeHTML':
+      savedState.htmlChanges[selector] = content;
+      break;
+    case 'changeStyle':
+      if (!savedState.styleChanges[selector]) {
+        savedState.styleChanges[selector] = {};
+      }
+      savedState.styleChanges[selector][property] = value;
+      break;
+    case 'addClass':
+      if (!savedState.classChanges[selector]) {
+        savedState.classChanges[selector] = [];
+      }
+      if (!savedState.classChanges[selector].includes(value)) {
+        savedState.classChanges[selector].push(value);
+      }
+      break;
+    case 'removeClass':
+      if (savedState.classChanges[selector]) {
+        savedState.classChanges[selector] = savedState.classChanges[selector].filter(c => c !== value);
+      }
+      break;
+  }
+  
+  saveCurrentState();
+}
+
+// Wait for iframe to load
+window.addEventListener('load', () => {
+  targetIframe = document.getElementById('targetIframe');
+  
+  // Load saved state on page load
+  loadSavedState();
+  
+  // Listen for messages from iframe
+  window.addEventListener('message', (event) => {
+    if (event.data.type === 'DOM_MANIPULATION_RESULT') {
+      updateStatus(event.data.message, event.data.success);
+    } else if (event.data.type === 'ELEMENT_SELECTED') {
+      handleElementSelection(event.data.element);
+    } else if (event.data.type === 'IFRAME_READY') {
+      // Apply saved state when iframe is ready
+      setTimeout(() => {
+        applySavedState();
+      }, 100);
+    }
+  });
+});
+
+function handleElementSelection(elementInfo) {
+  selectedElementInfo = elementInfo;
+  
+  // Show selected element section
+  document.getElementById('selectedElementSection').style.display = 'block';
+  
+  // Update element info display
+  document.getElementById('elementTag').textContent = elementInfo.tagName;
+  document.getElementById('elementId').textContent = elementInfo.id || 'none';
+  document.getElementById('elementSelector').textContent = elementInfo.selector;
+  document.getElementById('elementText').textContent = elementInfo.textContent;
+  
+  updateStatus(`Selected: ${elementInfo.tagName}${elementInfo.id ? '#' + elementInfo.id : ''}`, true);
 }
 
 function updateStatus(message, success = true) {
@@ -211,10 +456,17 @@ window.highlightText = function() {
 }
 
 window.hideSection = function() {
+  const elementInfo = {
+    selector: '.demo-section',
+    tagName: 'div',
+    id: '',
+    textContent: 'Demo Section'
+  };
   sendMessageToIframe({
     action: 'hide',
     selector: '.demo-section'
   });
+  addToHiddenElements(elementInfo);
 }
 
 window.showSection = function() {
@@ -305,4 +557,185 @@ window.removeClass = function() {
     selector: target,
     value: className
   });
+}
+
+// Quick action functions for selected element
+window.quickEditText = function() {
+  if (!selectedElementInfo) return;
+  const newText = prompt('Enter new text:', selectedElementInfo.textContent);
+  if (newText !== null) {
+    sendMessageToIframe({
+      action: 'changeText',
+      selector: selectedElementInfo.selector,
+      content: newText
+    });
+  }
+}
+
+window.quickChangeColor = function() {
+  if (!selectedElementInfo) return;
+  const color = prompt('Enter color (e.g., red, #ff0000, rgb(255,0,0)):', 'blue');
+  if (color) {
+    sendMessageToIframe({
+      action: 'changeStyle',
+      selector: selectedElementInfo.selector,
+      property: 'color',
+      value: color
+    });
+  }
+}
+
+window.quickChangeBg = function() {
+  if (!selectedElementInfo) return;
+  const colors = ['#ffeb3b', '#4caf50', '#2196f3', '#ff9800', '#e91e63', '#9c27b0'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'backgroundColor',
+    value: color
+  });
+}
+
+window.quickHide = function() {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'hide',
+    selector: selectedElementInfo.selector
+  });
+  addToHiddenElements(selectedElementInfo);
+}
+
+window.quickHighlight = function() {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'addClass',
+    selector: selectedElementInfo.selector,
+    value: 'highlight'
+  });
+}
+
+window.quickRemoveHighlight = function() {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'removeClass',
+    selector: selectedElementInfo.selector,
+    value: 'highlight'
+  });
+}
+
+function addToHiddenElements(elementInfo) {
+  // Don't add duplicates
+  if (!hiddenElements.find(el => el.selector === elementInfo.selector)) {
+    hiddenElements.push(elementInfo);
+    updateHiddenElementsList();
+  }
+}
+
+function removeFromHiddenElements(selector) {
+  hiddenElements = hiddenElements.filter(el => el.selector !== selector);
+  updateHiddenElementsList();
+}
+
+function updateHiddenElementsList() {
+  const hiddenSection = document.getElementById('hiddenElementsSection');
+  const hiddenList = document.getElementById('hiddenElementsList');
+  
+  if (hiddenElements.length === 0) {
+    hiddenSection.style.display = 'none';
+    return;
+  }
+  
+  hiddenSection.style.display = 'block';
+  hiddenList.innerHTML = '';
+  
+  hiddenElements.forEach(element => {
+    const listItem = document.createElement('div');
+    listItem.className = 'hidden-element-item';
+    listItem.innerHTML = `
+      <span class="hidden-element-info">
+        ${element.tagName}${element.id ? '#' + element.id : ''}: ${element.textContent}
+      </span>
+      <button class="action-btn small" onclick="restoreElement('${element.selector}')">Show</button>
+    `;
+    hiddenList.appendChild(listItem);
+  });
+}
+
+window.restoreElement = function(selector) {
+  sendMessageToIframe({
+    action: 'show',
+    selector: selector
+  });
+  removeFromHiddenElements(selector);
+}
+
+window.showAllHidden = function() {
+  hiddenElements.forEach(element => {
+    sendMessageToIframe({
+      action: 'show',
+      selector: element.selector
+    });
+  });
+  hiddenElements = [];
+  updateHiddenElementsList();
+}
+
+// Export/Import state functions
+window.exportState = function() {
+  const stateJson = JSON.stringify(savedState, null, 2);
+  const blob = new Blob([stateJson], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pixelpolish-state.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  updateStatus('State exported successfully', true);
+}
+
+window.importState = function() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedState = JSON.parse(e.target.result);
+          savedState = importedState;
+          hiddenElements = savedState.hiddenElements || [];
+          saveCurrentState();
+          updateHiddenElementsList();
+          applySavedState();
+          updateStatus('State imported and applied successfully', true);
+        } catch (error) {
+          updateStatus('Error importing state: Invalid JSON file', false);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+  input.click();
+}
+
+// Collapsible sections functionality
+window.toggleSection = function(sectionId) {
+  const content = document.getElementById(sectionId);
+  const header = content.parentElement.querySelector('.section-header');
+  const icon = header.querySelector('.toggle-icon');
+  
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    icon.textContent = '▼';
+    header.classList.remove('collapsed');
+  } else {
+    content.style.display = 'none';
+    icon.textContent = '▶';
+    header.classList.add('collapsed');
+  }
 }

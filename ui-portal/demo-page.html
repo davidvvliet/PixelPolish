@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Demo Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            transition: all 0.3s ease;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Clickable elements styling */
+        .clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .clickable:hover {
+            outline: 2px dashed #646cff;
+            outline-offset: 2px;
+        }
+        
+        .selected {
+            outline: 3px solid #646cff !important;
+            outline-offset: 3px;
+            box-shadow: 0 0 10px rgba(100, 108, 255, 0.3);
+        }
+        
+        #main-title {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            transition: all 0.3s ease;
+        }
+        
+        #description {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .demo-section {
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007cba;
+            transition: all 0.3s ease;
+        }
+        
+        #section-title {
+            color: #007cba;
+            margin-top: 0;
+            font-size: 1.5em;
+        }
+        
+        #demo-text {
+            color: #555;
+            font-size: 1em;
+            margin: 15px 0;
+        }
+        
+        #highlight-text {
+            background-color: #ffeb3b;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        #dynamic-content {
+            background: #e8f5e9;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 2px dashed #4caf50;
+            min-height: 50px;
+        }
+        
+        #demo-list {
+            background: #fff3e0;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        #demo-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        #demo-list li {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        #footer {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: 30px;
+            border-radius: 8px;
+        }
+        
+        .highlight {
+            background-color: #ffcdd2 !important;
+            border: 2px solid #f44336 !important;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="main-title" class="clickable">Interactive Demo Website</h1>
+        <p id="description" class="clickable">This is a demonstration page where you can test DOM manipulation using the control panel. Try changing text, colors, and styles!</p>
+        
+        <div class="demo-section clickable">
+            <h2 id="section-title" class="clickable">Demo Section</h2>
+            <p id="demo-text" class="clickable">This text can be modified using the text manipulation controls. You can change this content, style it, or even hide this entire section.</p>
+            <p>Here's some <span id="highlight-text" class="clickable">highlighted text</span> that you can style differently.</p>
+        </div>
+        
+        <div id="dynamic-content" class="clickable">
+            <h3>Dynamic Content Area</h3>
+            <p>This area can be populated with new content using the content manipulation controls. Try adding some HTML here!</p>
+        </div>
+        
+        <div id="demo-list" class="clickable">
+            <h3>Demo List</h3>
+            <ul>
+                <li class="clickable">Item 1 - Original content</li>
+                <li class="clickable">Item 2 - Can be replaced</li>
+                <li class="clickable">Item 3 - Try the controls!</li>
+            </ul>
+        </div>
+        
+        <div id="footer" class="clickable">
+            <p>Footer area - Perfect for testing content updates</p>
+        </div>
+    </div>
+
+    <script>
+        let selectedElement = null;
+        
+        // Initialize clickable elements
+        function initializeClickableElements() {
+            document.querySelectorAll('.clickable').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    selectElement(this);
+                });
+            });
+        }
+        
+        // Select an element
+        function selectElement(element) {
+            // Remove previous selection
+            if (selectedElement) {
+                selectedElement.classList.remove('selected');
+            }
+            
+            // Select new element
+            selectedElement = element;
+            element.classList.add('selected');
+            
+            // Get element info
+            const elementInfo = {
+                id: element.id || '',
+                tagName: element.tagName.toLowerCase(),
+                className: element.className.replace('clickable', '').replace('selected', '').trim(),
+                textContent: element.textContent.substring(0, 50) + (element.textContent.length > 50 ? '...' : ''),
+                selector: getElementSelector(element)
+            };
+            
+            // Send selection info to parent
+            parent.postMessage({
+                type: 'ELEMENT_SELECTED',
+                element: elementInfo
+            }, '*');
+        }
+        
+        // Get CSS selector for element
+        function getElementSelector(element) {
+            if (element.id) {
+                return '#' + element.id;
+            }
+            
+            let selector = element.tagName.toLowerCase();
+            if (element.className) {
+                const classes = element.className.split(' ').filter(c => c && c !== 'clickable' && c !== 'selected');
+                if (classes.length > 0) {
+                    selector += '.' + classes.join('.');
+                }
+            }
+            
+            return selector;
+        }
+        
+        // Listen for messages from parent window (control panel)
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'DOM_MANIPULATION') {
+                const { action, selector, property, value, content } = event.data;
+                
+                try {
+                    const elements = document.querySelectorAll(selector);
+                    
+                    if (elements.length === 0) {
+                        sendResult(`No elements found for selector: ${selector}`, false);
+                        return;
+                    }
+                    
+                    elements.forEach(element => {
+                        switch (action) {
+                            case 'changeText':
+                                element.textContent = content;
+                                break;
+                                
+                            case 'changeHTML':
+                                element.innerHTML = content;
+                                break;
+                                
+                            case 'changeStyle':
+                                element.style[property] = value;
+                                break;
+                                
+                            case 'addClass':
+                                element.classList.add(value);
+                                break;
+                                
+                            case 'removeClass':
+                                element.classList.remove(value);
+                                break;
+                                
+                            case 'hide':
+                                element.style.display = 'none';
+                                break;
+                                
+                            case 'show':
+                                element.style.display = '';
+                                break;
+                                
+                            default:
+                                sendResult(`Unknown action: ${action}`, false);
+                                return;
+                        }
+                    });
+                    
+                    sendResult(`Successfully applied ${action} to ${elements.length} element(s)`, true);
+                    
+                } catch (error) {
+                    sendResult(`Error: ${error.message}`, false);
+                }
+            }
+        });
+        
+        function sendResult(message, success) {
+            parent.postMessage({
+                type: 'DOM_MANIPULATION_RESULT',
+                message: message,
+                success: success
+            }, '*');
+        }
+        
+        // Send ready message when page loads
+        window.addEventListener('load', function() {
+            initializeClickableElements();
+            
+            // Send ready message to parent for applying saved state
+            parent.postMessage({
+                type: 'IFRAME_READY'
+            }, '*');
+            
+            sendResult('Demo page loaded and ready for manipulation! Click on any element to select it.', true);
+        });
+    </script>
+</body>
+</html> 
