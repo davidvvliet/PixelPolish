@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="ui-portal/public/pixelpolish-logo.webp" alt="PixelPolish Logo" width="200" />
+</div>
+
 # PixelPolish - AI-Powered Web Interface Manipulation Platform
 ![](./pixelpolish-ui.png)
 
@@ -213,6 +217,32 @@ npm run build
 - Set appropriate CORS policies for target websites
 - Ensure secure API key management
 - Implement proper error handling and logging
+
+## Troubleshooting
+
+### CORS Issues
+If you encounter Cross-Origin Resource Sharing (CORS) errors when running PixelPolish on different computers:
+
+1. **OpenAI API CORS Errors**: PixelPolish uses a local proxy to avoid browser CORS restrictions. API calls are automatically routed through `/api/openai/` instead of direct OpenAI URLs.
+
+2. **MCP Server Connection Issues**: The submit functionality gracefully handles MCP server unavailability with offline mode. Changes are saved locally when the MCP server isn't running.
+
+3. **Cross-Origin Iframe Issues**: The Vite configuration includes comprehensive CORS headers and proper iframe compatibility settings.
+
+For detailed CORS troubleshooting, see `CORS-TROUBLESHOOTING.md`.
+
+### Quick CORS Fixes
+- Restart the development server: `npm run dev`
+- Clear browser cache and reload
+- Check browser console for specific error details
+- Ensure configuration is properly set in `ui-portal/src/config.js`
+- Try in a different browser or incognito mode
+
+### Network Configuration
+The application works in "offline mode" when external services are unavailable:
+- **AI Assistant**: Requires OpenAI API key and internet connection
+- **MCP Server**: Optional - submit functionality works without it
+- **Local Changes**: Always saved to browser localStorage
 
 ---
 
