@@ -19,7 +19,7 @@ document.querySelector('#app').innerHTML = `
       <div class="control-panel">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <h2 style="margin: 0;">Control Panel</h2>
-          <button class="action-btn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit</button>
+          <button class="action-btn" id="submitBtn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit</button>
         </div>
         
         <!-- Selected Element -->
@@ -117,7 +117,7 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="${getTargetUrl()}" 
+          src="./landing-page.html" 
           width="900" 
           height="700" 
           frameborder="0"
@@ -309,6 +309,13 @@ function saveChangeToState(data) {
 
 // Submit to MCP Server function
 window.submitToMCP = async function() {
+  const submitBtn = document.getElementById('submitBtn');
+  const originalBtnText = submitBtn.innerHTML;
+  const originalBtnStyle = submitBtn.style.cssText;
+  
+  // Show loading animation
+  showSubmitAnimation(submitBtn);
+  
   // Dynamically use the current port for the MCP endpoint
   const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
   const endpoint = `${window.location.protocol}//${window.location.hostname}:${currentPort}/api/submit`;
@@ -334,14 +341,69 @@ window.submitToMCP = async function() {
     
     if (response.ok) {
       const result = await response.json();
-      updateStatus(`Successfully submitted to MCP server! Response: ${result.message || 'OK'}`, true);
+      
+      // Show success animation with sparkles
+      showSuccessAnimation(submitBtn);
+      
+      // Update status after a delay
+      setTimeout(() => {
+        updateStatus(`Successfully submitted to MCP server! Response: ${result.message || 'OK'}`, true);
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+          resetSubmitButton(submitBtn, originalBtnText, originalBtnStyle);
+        }, 3000);
+      }, 1500);
+      
     } else {
       const errorText = await response.text();
       updateStatus(`MCP server error (${response.status}): ${errorText}`, false);
+      resetSubmitButton(submitBtn, originalBtnText, originalBtnStyle);
     }
   } catch (error) {
     updateStatus(`Failed to connect to MCP server: ${error.message}`, false);
+    resetSubmitButton(submitBtn, originalBtnText, originalBtnStyle);
   }
+}
+
+// Show loading animation on submit button
+function showSubmitAnimation(button) {
+  button.innerHTML = `
+    <div class="submit-loading">
+      <div class="loading-spinner"></div>
+      <span>Submitting...</span>
+    </div>
+  `;
+  button.style.background = 'linear-gradient(45deg, #646cff, #747bff)';
+  button.style.cursor = 'not-allowed';
+  button.disabled = true;
+}
+
+// Show success animation with sparkles
+function showSuccessAnimation(button) {
+  button.innerHTML = `
+    <div class="submit-success">
+      <div class="sparkles-container">
+        <div class="sparkle sparkle-1"></div>
+        <div class="sparkle sparkle-2"></div>
+        <div class="sparkle sparkle-3"></div>
+        <div class="sparkle sparkle-4"></div>
+        <div class="sparkle sparkle-5"></div>
+        <div class="sparkle sparkle-6"></div>
+      </div>
+      <span class="success-text">Submitted</span>
+    </div>
+  `;
+  button.style.background = 'linear-gradient(45deg, #4CAF50, #66BB6A)';
+  button.style.boxShadow = '0 4px 15px rgba(76, 175, 80, 0.4)';
+}
+
+// Reset submit button to original state
+function resetSubmitButton(button, originalText, originalStyle) {
+  button.innerHTML = originalText;
+  button.style.cssText = originalStyle;
+  button.disabled = false;
+  button.style.cursor = 'pointer';
 }
 
 // Generate a clean list of changes
@@ -477,27 +539,106 @@ window.quickEditText = function() {
 
 window.quickChangeColor = function() {
   if (!selectedElementInfo) return;
-  const color = prompt('Enter color (e.g., red, #ff0000, rgb(255,0,0)):', 'blue');
-  if (color) {
-    sendMessageToIframe({
-      action: 'changeStyle',
-      selector: selectedElementInfo.selector,
-      property: 'color',
-      value: color
-    });
-  }
+  showColorPicker('color', 'Text Color');
 }
 
 window.quickChangeBg = function() {
   if (!selectedElementInfo) return;
-  const colors = ['#ffeb3b', '#4caf50', '#2196f3', '#ff9800', '#e91e63', '#9c27b0'];
-  const color = colors[Math.floor(Math.random() * colors.length)];
+  showColorPicker('backgroundColor', 'Background Color');
+}
+
+// Show color picker
+function showColorPicker(cssProperty, title) {
+  // Remove any existing color picker
+  const existingPicker = document.getElementById('colorPicker');
+  if (existingPicker) {
+    existingPicker.remove();
+  }
+  
+  // Create color picker container
+  const colorPicker = document.createElement('div');
+  colorPicker.id = 'colorPicker';
+  colorPicker.style.cssText = `
+    position: fixed;
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 10000;
+    font-family: Arial, sans-serif;
+  `;
+  
+  // Common colors
+  const commonColors = [
+    '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+    '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000',
+    '#FFFFFF', '#90EE90', '#FFB6C1', '#20B2AA', '#87CEEB', '#DDA0DD'
+  ];
+  
+  colorPicker.innerHTML = `
+    <h4 style="margin: 0 0 15px 0; color: #333;">${title}</h4>
+    
+    <div style="margin-bottom: 15px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold;">Custom Color:</label>
+      <input type="color" id="customColorInput" value="#FF0000" style="width: 60px; height: 40px; border: none; border-radius: 4px; cursor: pointer;">
+      <button onclick="applyCustomColor('${cssProperty}')" style="margin-left: 10px; padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Apply</button>
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold;">Common Colors:</label>
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;">
+        ${commonColors.map(color => `
+          <div onclick="applyColor('${cssProperty}', '${color}')" 
+               style="width: 30px; height: 30px; background: ${color}; border: 2px solid #ccc; border-radius: 4px; cursor: pointer; transition: border-color 0.2s;"
+               onmouseover="this.style.borderColor='#007bff'" 
+               onmouseout="this.style.borderColor='#ccc'">
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    
+    <div style="text-align: center;">
+      <button onclick="closeColorPicker()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+    </div>
+  `;
+  
+  document.body.appendChild(colorPicker);
+}
+
+// Apply selected color
+window.applyColor = function(cssProperty, color) {
+  if (!selectedElementInfo) return;
+  
   sendMessageToIframe({
     action: 'changeStyle',
     selector: selectedElementInfo.selector,
-    property: 'backgroundColor',
+    property: cssProperty,
     value: color
   });
+  
+  closeColorPicker();
+  updateStatus(`Applied ${cssProperty}: ${color}`, true);
+}
+
+// Apply custom color from color input
+window.applyCustomColor = function(cssProperty) {
+  const colorInput = document.getElementById('customColorInput');
+  if (colorInput && selectedElementInfo) {
+    const color = colorInput.value;
+    applyColor(cssProperty, color);
+  }
+}
+
+// Close color picker
+window.closeColorPicker = function() {
+  const colorPicker = document.getElementById('colorPicker');
+  if (colorPicker) {
+    colorPicker.remove();
+  }
 }
 
 window.quickHide = function() {
