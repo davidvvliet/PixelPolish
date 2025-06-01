@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelPolish - Transform Your Web Experience</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content {
+            text-align: center;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: #f8f9fa;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 60px;
+            color: #333;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Demo Section */
+        .demo {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .demo-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .demo-text h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .demo-text p {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .demo-visual {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .demo-visual::before {
+            content: '🎨';
+            font-size: 6em;
+            display: block;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Footer */
+        .footer {
+            background: #333;
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .footer p {
+            margin-bottom: 20px;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .social-links a {
+            color: white;
+            font-size: 1.5em;
+            transition: color 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #667eea;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5em;
+            }
+
+            .hero p {
+                font-size: 1.1em;
+            }
+
+            .section-title {
+                font-size: 2em;
+            }
+
+            .demo-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .feature-card {
+                padding: 30px;
+            }
+        }
+
+        /* Scroll animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>PixelPolish</h1>
+                <p>Transform your web experience with real-time DOM manipulation and intelligent design tools. Polish every pixel to perfection.</p>
+                <a href="../ui-portal/" class="cta-button">Launch Control Panel</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Real-Time Editing</h3>
+                    <p>Make instant changes to any website with our intuitive control panel. See your modifications take effect immediately.</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Visual Design Tools</h3>
+                    <p>Comprehensive styling controls for text, colors, layouts, and animations. Create beautiful designs without code.</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">💾</div>
+                    <h3>State Management</h3>
+                    <p>Automatically save your changes to local storage. Export and import design states for easy collaboration.</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🔗</div>
+                    <h3>MCP Integration</h3>
+                    <p>Submit your changes to Model Context Protocol servers for AI-powered analysis and suggestions.</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">📱</div>
+                    <h3>Responsive Preview</h3>
+                    <p>Test your changes across different screen sizes and devices in real-time with our responsive preview tools.</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Element Selection</h3>
+                    <p>Click any element to select and modify it instantly. Advanced selector tools for precise targeting.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo">
+        <div class="container">
+            <div class="demo-content">
+                <div class="demo-text fade-in">
+                    <h2>See It In Action</h2>
+                    <p>Experience the power of PixelPolish with our interactive demo. Modify text, change colors, add content, and watch your changes come to life instantly.</p>
+                    <p>Our intuitive interface makes web design accessible to everyone, from beginners to professional developers.</p>
+                    <a href="../ui-portal/" class="cta-button">Try the Demo</a>
+                </div>
+                <div class="demo-visual fade-in">
+                    <div style="font-size: 1.5em; margin-bottom: 20px;">Interactive Control Panel</div>
+                    <p>Click elements • Modify styles • Save changes • Export designs</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PixelPolish. Crafted with care for the web design community.</p>
+            <div class="social-links">
+                <a href="#">🐙</a>
+                <a href="#">🐦</a>
+                <a href="#">💼</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all fade-in elements
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add some interactive effects
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-10px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // DOM Manipulation Script for PixelPolish Control Panel
+        function generateSelector(element) {
+            if (element.id) return '#' + element.id;
+            if (element.className) {
+                const classes = element.className.split(' ').filter(c => c.trim() !== '');
+                if (classes.length > 0) return '.' + classes[0];
+            }
+            return element.tagName.toLowerCase();
+        }
+
+        // Element selection for control panel
+        document.addEventListener('click', function(e) {
+            // Don't interfere with normal link clicks
+            if (e.target.tagName === 'A') return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const element = e.target;
+            const elementInfo = {
+                tagName: element.tagName.toLowerCase(),
+                id: element.id || '',
+                className: element.className || '',
+                selector: generateSelector(element),
+                textContent: element.textContent.substring(0, 100) + (element.textContent.length > 100 ? '...' : '')
+            };
+            
+            // Highlight selected element
+            document.querySelectorAll('.pixelpolish-selected').forEach(el => {
+                el.classList.remove('pixelpolish-selected');
+            });
+            element.classList.add('pixelpolish-selected');
+            
+            // Send to parent window
+            window.parent.postMessage({
+                type: 'ELEMENT_SELECTED',
+                element: elementInfo
+            }, '*');
+        });
+
+        // Listen for DOM manipulation commands
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'DOM_MANIPULATION') {
+                const { action, selector, property, value, content } = event.data;
+                
+                try {
+                    const elements = document.querySelectorAll(selector);
+                    if (elements.length === 0) {
+                        throw new Error(`No elements found for selector: ${selector}`);
+                    }
+                    
+                    elements.forEach(element => {
+                        switch (action) {
+                            case 'changeText':
+                                element.textContent = content;
+                                break;
+                            case 'changeHTML':
+                                element.innerHTML = content;
+                                break;
+                            case 'changeStyle':
+                                element.style[property] = value;
+                                break;
+                            case 'addClass':
+                                element.classList.add(value);
+                                break;
+                            case 'removeClass':
+                                element.classList.remove(value);
+                                break;
+                            case 'hide':
+                                element.style.display = 'none';
+                                break;
+                            case 'show':
+                                element.style.display = '';
+                                break;
+                            case 'selectElement':
+                                // Highlight the element
+                                document.querySelectorAll('.pixelpolish-selected').forEach(el => {
+                                    el.classList.remove('pixelpolish-selected');
+                                });
+                                element.classList.add('pixelpolish-selected');
+                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                break;
+                        }
+                    });
+                    
+                    // Send success message back
+                    window.parent.postMessage({
+                        type: 'DOM_MANIPULATION_RESULT',
+                        success: true,
+                        message: `Successfully ${action} on ${elements.length} element(s)`
+                    }, '*');
+                    
+                } catch (error) {
+                    // Send error message back
+                    window.parent.postMessage({
+                        type: 'DOM_MANIPULATION_RESULT',
+                        success: false,
+                        message: error.message
+                    }, '*');
+                }
+            } else if (event.data.type === 'ANALYZE_PAGE') {
+                // Analyze the page and send element data back
+                analyzePage();
+            }
+        });
+
+        // Analyze page elements and send to parent
+        function analyzePage() {
+            const analysis = [];
+            
+            // Define element types to analyze
+            const elementTypes = [
+                { selector: 'h1, h2, h3, h4, h5, h6', type: 'heading' },
+                { selector: 'p', type: 'text' },
+                { selector: 'a', type: 'link' },
+                { selector: 'button', type: 'button' },
+                { selector: '.feature-card', type: 'card' },
+                { selector: '.cta-button', type: 'cta' },
+                { selector: 'section', type: 'section' },
+                { selector: '.hero', type: 'hero' },
+                { selector: '.footer', type: 'footer' }
+            ];
+            
+            elementTypes.forEach(({ selector, type }) => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach((element, index) => {
+                    const text = element.textContent.trim();
+                    if (text) {
+                        let uniqueSelector = selector;
+                        
+                        // Create more specific selectors when possible
+                        if (element.id) {
+                            uniqueSelector = `#${element.id}`;
+                        } else if (element.className) {
+                            const classes = element.className.split(' ').filter(c => c.trim() !== '');
+                            if (classes.length > 0) {
+                                uniqueSelector = `.${classes[0]}`;
+                                // For multiple elements of same class, add nth-child
+                                const sameClassElements = document.querySelectorAll(`.${classes[0]}`);
+                                if (sameClassElements.length > 1) {
+                                    const elementIndex = Array.from(sameClassElements).indexOf(element);
+                                    uniqueSelector = `.${classes[0]}:nth-child(${elementIndex + 1})`;
+                                }
+                            }
+                        } else {
+                            // Use nth-of-type for elements without classes/ids
+                            const sameTagElements = element.parentElement ? 
+                                element.parentElement.querySelectorAll(element.tagName.toLowerCase()) : [];
+                            if (sameTagElements.length > 1) {
+                                const elementIndex = Array.from(sameTagElements).indexOf(element);
+                                uniqueSelector = `${element.tagName.toLowerCase()}:nth-of-type(${elementIndex + 1})`;
+                            }
+                        }
+                        
+                        analysis.push({
+                            selector: uniqueSelector,
+                            type: type,
+                            text: text.substring(0, 100),
+                            tagName: element.tagName.toLowerCase(),
+                            id: element.id || '',
+                            className: element.className || ''
+                        });
+                    }
+                });
+            });
+            
+            // Send analysis to parent
+            window.parent.postMessage({
+                type: 'PAGE_ANALYSIS',
+                analysis: analysis
+            }, '*');
+        }
+
+        // Add selection highlighting CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            .pixelpolish-selected {
+                outline: 3px solid #4CAF50 !important;
+                outline-offset: 2px;
+                position: relative;
+            }
+            .pixelpolish-selected::after {
+                content: 'SELECTED';
+                position: absolute;
+                top: -25px;
+                left: 0;
+                background: #4CAF50;
+                color: white;
+                padding: 2px 6px;
+                font-size: 10px;
+                font-weight: bold;
+                border-radius: 3px;
+                z-index: 1000;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Signal that iframe is ready
+        window.parent.postMessage({
+            type: 'IFRAME_READY'
+        }, '*');
+    </script>
+</body>
+</html> 
