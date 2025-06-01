@@ -113,6 +113,7 @@ document.querySelector('#app').innerHTML = `
 let targetIframe;
 let selectedElementInfo = null;
 let hiddenElements = [];
+let isRestoring = false;
 let savedState = {
   textChanges: {},
   styleChanges: {},
@@ -124,22 +125,34 @@ let savedState = {
 // Load saved state from localStorage
 function loadSavedState() {
   const saved = localStorage.getItem('pixelpolish-state');
+  console.log('Loading saved state:', saved);
   if (saved) {
-    savedState = JSON.parse(saved);
-    hiddenElements = savedState.hiddenElements || [];
-    updateHiddenElementsList();
+    try {
+      savedState = JSON.parse(saved);
+      hiddenElements = savedState.hiddenElements || [];
+      updateHiddenElementsList();
+      console.log('Successfully loaded saved state:', savedState);
+    } catch (error) {
+      console.error('Error parsing saved state:', error);
+      updateStatus('Error loading saved state', false);
+    }
+  } else {
+    console.log('No saved state found');
   }
 }
 
 // Save current state to localStorage
 function saveCurrentState() {
   savedState.hiddenElements = hiddenElements;
+  console.log('Saving state to localStorage:', savedState);
   localStorage.setItem('pixelpolish-state', JSON.stringify(savedState));
   updateStatus('Changes saved to browser storage', true);
 }
 
 // Apply saved state to the demo page
 function applySavedState() {
+  isRestoring = true;
+  
   // Apply text changes
   Object.keys(savedState.textChanges).forEach(selector => {
     sendMessageToIframe({
@@ -188,6 +201,8 @@ function applySavedState() {
       selector: element.selector
     });
   });
+  
+  isRestoring = false;
 }
 
 // Clear all saved state
@@ -216,7 +231,8 @@ function sendMessageToIframe(data) {
     }, '*');
     
     // Save the change to local state (skip show/hide as they are handled separately)
-    if (data.action !== 'show' && data.action !== 'hide') {
+    // Also skip saving when we're restoring state to prevent circular saves
+    if (data.action !== 'show' && data.action !== 'hide' && !isRestoring) {
       saveChangeToState(data);
     }
   } else {
