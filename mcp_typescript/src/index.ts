@@ -24,6 +24,7 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { readFileSync, existsSync } from 'fs';
 import { extname } from 'path';
+import { exec } from 'child_process';
 
 class PixelPolishMCPServer {
   private server: Server;
@@ -138,12 +139,13 @@ class PixelPolishMCPServer {
           },
           {
             name: 'serve_vite_app',
-            description: 'Serve the built UI Portal application from dist directory',
+            description: 'Builds the user\'s Vite application and serves its index.html with injected DOM/tree editing tools.',
             inputSchema: {
               type: 'object',
               properties: {
-                port: { type: 'number', description: 'Port to serve on', default: 8080 },
-                dist_path: { type: 'string', description: 'Path to dist directory', default: '/Users/earlpotters/Documents/ai-projects/PixelPolish/ui-portal/dist' },
+                user_project_path: { type: 'string', description: 'Optional. Path to the user\'s Vite project root directory. Defaults to current working directory if not provided.' },
+                user_build_command: { type: 'string', description: 'Optional. The command to build the user\'s Vite project.', default: 'npm run build'},
+                port: { type: 'number', description: 'Port to serve the application with editing tools on', default: 8080 }
               },
               required: [],
             },
@@ -344,135 +346,136 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
   }
 
   private async handleServeViteApp(args: any) {
-    const { 
-      port = 8080,
-      dist_path = '/Users/earlpotters/Documents/ai-projects/PixelPolish/ui-portal/dist'
+    let {
+      user_project_path,
+      user_build_command = 'npm run build',
+      port = 8080
     } = args;
 
-    // Check if server is already running
+    if (!user_project_path) {
+      user_project_path = process.cwd();
+    }
+
     if (this.httpServer) {
       const serverPort = this.httpServer.address()?.port;
       return {
-        content: [{ 
-          type: "text", 
-          text: `❌ HTTP server is already running on port ${serverPort}. Use stop_vite_app to stop it first.` 
-        }]
+        content: [{ type: "text", text: `❌ HTTP server is already running on port ${serverPort}. Use stop_vite_app to stop it first.` }]
       };
     }
 
-    // Check if dist directory exists
-    if (!existsSync(dist_path)) {
-      throw new McpError(
-        ErrorCode.InvalidParams, 
-        `Dist directory not found: ${dist_path}. Make sure the UI Portal has been built.`
-      );
-    }
-
-    // Check if index.html exists
-    const indexPath = join(dist_path, 'index.html');
-    if (!existsSync(indexPath)) {
-      throw new McpError(
-        ErrorCode.InvalidParams, 
-        `index.html not found in: ${dist_path}. Make sure the build is complete.`
-      );
-    }
-
     try {
-      console.error(`🚀 Starting HTTP server for UI Portal at: ${dist_path}`);
+      // 1. Build User's Application
+      console.error(`🚀 Starting build for user's project at: ${user_project_path} using command: "${user_build_command}"`);
+      await new Promise<void>((resolve, reject) => {
+        exec(user_build_command, { cwd: user_project_path }, (error, stdout, stderr) => {
+          if (error) {
+            console.error(`User project build error: ${error.message}`);
+            reject(new McpError(ErrorCode.InternalError, `User project build failed: ${error.message}\nStderr: ${stderr}`));
+            return;
+          }
+          console.log(`User project build stdout: ${stdout}`);
+          if (stderr) console.warn(`User project build stderr: ${stderr}`);
+          resolve();
+        });
+      });
+      console.error(`✅ User project build successful at: ${user_project_path}`);
 
-      // Create HTTP server
+      const user_dist_path = join(user_project_path, 'dist');
+      const user_indexPath = join(user_dist_path, 'index.html');
+
+      if (!existsSync(user_dist_path)) {
+        throw new McpError(ErrorCode.InternalError, `User dist directory not found at ${user_dist_path} after build.`);
+      }
+      if (!existsSync(user_indexPath)) {
+        throw new McpError(ErrorCode.InternalError, `User index.html not found in ${user_dist_path} after build.`);
+      }
+
+      // 2. Prepare Tools UI Snippet (Placeholder)
+      const toolsUiSnippet = `
+        <div id="roos-editing-tools-container" style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(240, 240, 240, 0.9); border-top: 1px solid #ccc; padding: 10px; box-sizing: border-box; z-index: 10000; display: flex; flex-direction: column; gap: 5px; max-height: 200px; overflow-y: auto;">
+          <h4 style="margin: 0 0 5px 0; text-align: center;">Live Editing Tools (DOM)</h4>
+          <button onclick="console.log('Attempting to select an element...'); alert('Element selection not yet implemented.');" style="padding: 5px;">Select Element</button>
+          <button onclick="alert(document.documentElement.outerHTML);" style="padding: 5px;">Show Full DOM HTML</button>
+          <p style="font-size: 0.8em; text-align: center; margin: 5px 0 0 0;">Changes made here are temporary to the DOM.</p>
+        </div>
+        <script>
+          console.log("Roo's Editing Tools UI Injected!");
+          // Future: Add more sophisticated JS for tool interaction here.
+          // For example, to communicate changes back or interact with an iframe.
+        </script>
+      `;
+
+      // 3. Read and Inject Tools UI into User's index.html
+      let userIndexHtmlContent = readFileSync(user_indexPath, 'utf-8');
+      userIndexHtmlContent = userIndexHtmlContent.replace('</body>', `${toolsUiSnippet}</body>`);
+      
+      console.error(`🚀 Starting HTTP server for modified user application at: ${user_dist_path}`);
+
       this.httpServer = createServer((req, res) => {
-        // Add CORS headers
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-        // Handle preflight requests
         if (req.method === 'OPTIONS') {
           res.writeHead(200);
           res.end();
           return;
         }
 
-        let filePath = req.url === '/' ? '/index.html' : req.url || '/index.html';
-        
-        // Remove query parameters
-        filePath = filePath.split('?')[0];
-        
-        // Security: prevent directory traversal
-        if (filePath.includes('..')) {
+        let reqFilePath = req.url === '/' ? '/index.html' : req.url || '/index.html';
+        reqFilePath = reqFilePath.split('?')[0];
+
+        if (reqFilePath.includes('..')) {
           res.writeHead(403);
           res.end('Forbidden');
           return;
         }
+        
+        const fullPath = join(user_dist_path, reqFilePath);
 
-        const fullPath = join(dist_path, filePath);
-
-        try {
-          if (existsSync(fullPath)) {
-            const content = readFileSync(fullPath);
-            const contentType = this.getContentType(fullPath);
-            
-            res.setHeader('Content-Type', contentType);
-            res.writeHead(200);
-            res.end(content);
-          } else {
-            // For SPA routing, serve index.html for routes that don't exist
-            const indexContent = readFileSync(indexPath);
-            res.setHeader('Content-Type', 'text/html');
-            res.writeHead(200);
-            res.end(indexContent);
-          }
-        } catch (fileError) {
-          console.error('File read error:', fileError);
-          res.writeHead(500);
-          res.end('Internal Server Error');
+        // Serve modified index.html for root or index.html requests
+        if (reqFilePath === '/index.html') {
+          res.setHeader('Content-Type', 'text/html');
+          res.writeHead(200);
+          res.end(userIndexHtmlContent);
+        } else if (existsSync(fullPath)) { // Serve other static assets as is
+          const content = readFileSync(fullPath);
+          const contentType = this.getContentType(fullPath);
+          res.setHeader('Content-Type', contentType);
+          res.writeHead(200);
+          res.end(content);
+        } else { // For SPA routing, serve modified index.html
+          res.setHeader('Content-Type', 'text/html');
+          res.writeHead(200);
+          res.end(userIndexHtmlContent);
         }
       });
 
-      // Start listening
       await new Promise<void>((resolve, reject) => {
         this.httpServer!.listen(port, (err: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
+          if (err) reject(err); else resolve();
         });
       });
 
       const serverUrl = `http://localhost:${port}`;
-      console.error(`✅ Server started at ${serverUrl}`);
+      console.error(`✅ Modified user application server started at ${serverUrl}`);
 
-      const resultText = `✅ UI Portal is now serving!
-
+      const resultText = `✅ User's application (with injected editing tools) is now serving!
 🌐 **Server URL:** ${serverUrl}
-📁 **Serving from:** ${dist_path}
+📁 **Serving from (user's dist):** ${user_dist_path}
 ⚡ **Port:** ${port}
-📄 **Index file:** ${indexPath}
+🛠️ **Editing Tools:** Injected into the page.
 
-The UI Portal application is now accessible in your browser.
-CORS is enabled for development purposes.
-SPA routing is supported - all routes will serve index.html.
-
-**Quick Actions:**
-- Open ${serverUrl} in your browser
-- Use \`stop_vite_app\` tool to stop the server
-- The server will serve all static assets from the dist directory`;
-
+The user's application is now accessible in your browser with temporary DOM editing tools.`;
       return { content: [{ type: "text", text: resultText }] };
 
     } catch (error) {
-      // Clean up on error
       if (this.httpServer) {
         this.httpServer.close();
         this.httpServer = null;
       }
-      
-      throw new McpError(
-        ErrorCode.InternalError, 
-        `Failed to start HTTP server: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new McpError(ErrorCode.InternalError, `Failed to start HTTP server: ${errorMessage}`);
     }
   }
 
