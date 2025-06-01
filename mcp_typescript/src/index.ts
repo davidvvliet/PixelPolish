@@ -24,6 +24,10 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { readFileSync, existsSync } from 'fs';
 import { extname } from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 // Shared state for API requests
 interface ApiRequest {
@@ -520,19 +524,43 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
       const serverUrl = `http://localhost:${port}`;
       console.error(`✅ Server started at ${serverUrl}`);
 
-      const resultText = `✅ UI Portal is now serving!
+      // Automatically open the URL in the default browser
+      try {
+        console.error(`🌐 Opening ${serverUrl} in your default browser...`);
+        
+        // Use the appropriate command based on the platform
+        let openCommand = '';
+        if (process.platform === 'darwin') {
+          openCommand = `open "${serverUrl}"`;
+        } else if (process.platform === 'win32') {
+          openCommand = `start "${serverUrl}"`;
+        } else {
+          // Linux and other Unix-like systems
+          openCommand = `xdg-open "${serverUrl}"`;
+        }
+        
+        await execAsync(openCommand);
+        console.error(`✅ Browser opened successfully`);
+      } catch (browserError) {
+        console.error(`⚠️ Could not automatically open browser: ${browserError}`);
+        console.error(`Please manually open: ${serverUrl}`);
+      }
+
+      const resultText = `✅ UI Portal is now serving and opened in your browser!
 
 🌐 **Server URL:** ${serverUrl}
 📁 **Serving from:** ${dist_path}
 ⚡ **Port:** ${port}
 📄 **Index file:** ${indexPath}
+🚀 **Browser:** Automatically opened ${serverUrl}
 
-The UI Portal application is now accessible in your browser.
+The UI Portal application is now accessible and should have opened in your default browser.
 CORS is enabled for development purposes.
 SPA routing is supported - all routes will serve index.html.
 
 **Quick Actions:**
-- Open ${serverUrl} in your browser
+- The browser should have automatically opened to ${serverUrl}
+- If it didn't open, manually navigate to ${serverUrl}
 - Use \`stop_vite_app\` tool to stop the server
 - The server will serve all static assets from the dist directory`;
 
