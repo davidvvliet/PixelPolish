@@ -35,6 +35,19 @@ document.querySelector('#app').innerHTML = `
               <button class="action-btn" onclick="quickHighlight()">Highlight</button>
               <button class="action-btn" onclick="quickRemoveHighlight()">Remove Highlight</button>
             </div>
+            
+            <!-- AI Assistant -->
+            <div class="ai-assistant" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+              <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">AI Assistant</h4>
+              <p style="margin: 0 0 10px 0; font-size: 12px; color: #666;">Describe what you want to change about this element:</p>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="aiRequest" placeholder="e.g., make this text red and bold" 
+                       style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;"
+                       onkeypress="if(event.key==='Enter') askAI()">
+                <button class="action-btn" onclick="askAI()" style="padding: 8px 12px; font-size: 12px;">Ask AI</button>
+              </div>
+              <div id="aiStatus" style="margin-top: 8px; font-size: 11px; color: #666;"></div>
+            </div>
           </div>
         </div>
 
@@ -97,7 +110,7 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="http://localhost:8081/landing-page" 
+          src="./landing-page.html" 
           width="900" 
           height="700" 
           frameborder="0"
@@ -869,5 +882,145 @@ window.togglePageAnimations = function() {
     property: 'animationPlayState',
     value: 'paused'
   });
+}
+
+// AI Assistant Function
+window.askAI = async function() {
+  if (!selectedElementInfo) {
+    updateAIStatus('Please select an element first', false);
+    return;
+  }
+  
+  const request = document.getElementById('aiRequest').value.trim();
+  if (!request) {
+    updateAIStatus('Please enter a request', false);
+    return;
+  }
+  
+  updateAIStatus('Processing your request...', true);
+  
+  try {
+    // Process the natural language request
+    const actions = await processAIRequest(request, selectedElementInfo);
+    
+    if (actions.length === 0) {
+      updateAIStatus('Could not understand the request. Try being more specific.', false);
+      return;
+    }
+    
+    // Apply each action
+    for (const action of actions) {
+      sendMessageToIframe(action);
+    }
+    
+    updateAIStatus(`Applied ${actions.length} change(s) successfully!`, true);
+    document.getElementById('aiRequest').value = ''; // Clear input
+    
+  } catch (error) {
+    updateAIStatus(`Error: ${error.message}`, false);
+  }
+}
+
+function updateAIStatus(message, success) {
+  const statusElement = document.getElementById('aiStatus');
+  statusElement.textContent = message;
+  statusElement.style.color = success ? '#28a745' : '#dc3545';
+}
+
+// Process natural language AI requests
+async function processAIRequest(request, elementInfo) {
+  // Hardcode your OpenAI API key here
+  const apiKey = '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'; // Replace with your actual API key
+  
+  if (!apiKey) {
+    throw new Error('Please set your OpenAI API key in the code');
+  }
+
+  const systemPrompt = `You are a web design assistant. The user has selected an HTML element and wants to modify it using natural language.
+
+Selected element info:
+- Tag: ${elementInfo.tagName}
+- ID: ${elementInfo.id || 'none'}
+- Classes: ${elementInfo.className || 'none'}
+- Current text: ${elementInfo.textContent}
+- CSS Selector: ${elementInfo.selector}
+
+Available actions you can return:
+1. changeText: Change text content
+2. changeStyle: Modify CSS properties (color, backgroundColor, fontSize, fontWeight, fontStyle, textDecoration, textAlign, etc.)
+3. changeHTML: Replace HTML content
+4. addClass: Add CSS class
+5. removeClass: Remove CSS class
+6. hide: Hide element
+7. show: Show element
+
+Return ONLY a JSON array of actions. Each action should have:
+- action: the action type
+- selector: "${elementInfo.selector}" (always use this exact selector)
+- For changeText: content (the new text)
+- For changeStyle: property and value
+- For changeHTML: content (the new HTML)
+- For addClass/removeClass: value (the class name)
+
+Examples:
+User: "make this red and bold"
+Response: [
+  {"action": "changeStyle", "selector": "${elementInfo.selector}", "property": "color", "value": "red"},
+  {"action": "changeStyle", "selector": "${elementInfo.selector}", "property": "fontWeight", "value": "bold"}
+]
+
+User: "change text to Hello World"
+Response: [
+  {"action": "changeText", "selector": "${elementInfo.selector}", "content": "Hello World"}
+]`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: request }
+      ],
+      max_tokens: 500,
+      temperature: 0.1
+    })
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Invalid API key. Please check your API key.');
+    }
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const aiResponse = data.choices[0].message.content;
+
+  try {
+    // Parse the JSON response from AI
+    const actions = JSON.parse(aiResponse);
+    
+    // Validate that it's an array
+    if (!Array.isArray(actions)) {
+      throw new Error('AI response is not an array');
+    }
+
+    // Validate each action has required fields
+    for (const action of actions) {
+      if (!action.action || !action.selector) {
+        throw new Error('Invalid action format');
+      }
+    }
+
+    return actions;
+  } catch (parseError) {
+    console.error('AI Response:', aiResponse);
+    throw new Error('Could not parse AI response. Please try rephrasing your request.');
+  }
 }
 
