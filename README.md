@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="ui-portal/public/pixelpolish-logo.webp" alt="PixelPolish Logo" width="200" />
+  <img src="ui-portal/pixelpolish-logo.webp" alt="PixelPolish Logo" width="200" />
 </div>
 
 # PixelPolish - AI-Powered Web Interface Manipulation Platform
