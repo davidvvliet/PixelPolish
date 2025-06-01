@@ -24,11 +24,11 @@ document.querySelector('#app').innerHTML = `
         
         <!-- Selected Element -->
         <div class="control-section" id="selectedElementSection" style="display: none;">
-          <h3 class="section-header collapsed" onclick="toggleSection('selectedElement')">
+          <h3 class="section-header" onclick="toggleSection('selectedElement')">
             <span>Selected Element</span>
-            <span class="toggle-icon">▶</span>
+            <span class="toggle-icon">▼</span>
           </h3>
-          <div class="section-content" id="selectedElement" style="display: none;">
+          <div class="section-content" id="selectedElement" style="display: block;">
             <div id="elementInfo" class="element-info">
               <p><strong>Tag:</strong> <span id="elementTag">-</span></p>
               <p><strong>ID:</strong> <span id="elementId">-</span></p>
