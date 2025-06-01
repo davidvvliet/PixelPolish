@@ -289,3 +289,25 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.element-info {
+  background: #f8f9fa;
+  padding: 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border-left: 3px solid #646cff;
+}
+
+.element-info p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.element-info strong {
+  color: #333;
+}
+
+.element-info span {
+  color: #646cff;
+  font-family: monospace;
+}

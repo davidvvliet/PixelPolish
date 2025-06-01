@@ -9,7 +9,7 @@ document.querySelector('#app').innerHTML = `
 
     <div class="main-content">
       <div class="control-panel">
-        <h2>🎛️ Control Panel</h2>
+        <h2>Control Panel</h2>
         
         <!-- Quick Actions -->
         <div class="control-section">
@@ -21,6 +21,25 @@ document.querySelector('#app').innerHTML = `
             <button class="action-btn" onclick="highlightText()">Highlight Text</button>
             <button class="action-btn" onclick="hideSection()">Hide Section</button>
             <button class="action-btn" onclick="showSection()">Show Section</button>
+          </div>
+        </div>
+
+        <!-- Selected Element -->
+        <div class="control-section" id="selectedElementSection" style="display: none;">
+          <h3>Selected Element</h3>
+          <div id="elementInfo" class="element-info">
+            <p><strong>Tag:</strong> <span id="elementTag">-</span></p>
+            <p><strong>ID:</strong> <span id="elementId">-</span></p>
+            <p><strong>Selector:</strong> <span id="elementSelector">-</span></p>
+            <p><strong>Text:</strong> <span id="elementText">-</span></p>
+          </div>
+          <div class="quick-actions">
+            <button class="action-btn" onclick="quickEditText()">Edit Text</button>
+            <button class="action-btn" onclick="quickChangeColor()">Change Color</button>
+            <button class="action-btn" onclick="quickChangeBg()">Change Background</button>
+            <button class="action-btn" onclick="quickHide()">Hide</button>
+            <button class="action-btn" onclick="quickHighlight()">Highlight</button>
+            <button class="action-btn" onclick="quickRemoveHighlight()">Remove Highlight</button>
           </div>
         </div>
 
@@ -118,11 +137,11 @@ document.querySelector('#app').innerHTML = `
         <h2>Target Website</h2>
         <iframe 
           id="targetIframe"
-          src="https://example.com" 
+          src="./demo-page.html" 
           width="900" 
           height="700" 
           frameborder="0"
-          title="Example.com">
+          title="Interactive Demo Page">
         </iframe>
       </div>
     </div>
@@ -131,6 +150,7 @@ document.querySelector('#app').innerHTML = `
 
 // DOM Manipulation Functions
 let targetIframe;
+let selectedElementInfo = null;
 
 // Wait for iframe to load
 window.addEventListener('load', () => {
@@ -140,9 +160,26 @@ window.addEventListener('load', () => {
   window.addEventListener('message', (event) => {
     if (event.data.type === 'DOM_MANIPULATION_RESULT') {
       updateStatus(event.data.message, event.data.success);
+    } else if (event.data.type === 'ELEMENT_SELECTED') {
+      handleElementSelection(event.data.element);
     }
   });
 });
+
+function handleElementSelection(elementInfo) {
+  selectedElementInfo = elementInfo;
+  
+  // Show selected element section
+  document.getElementById('selectedElementSection').style.display = 'block';
+  
+  // Update element info display
+  document.getElementById('elementTag').textContent = elementInfo.tagName;
+  document.getElementById('elementId').textContent = elementInfo.id || 'none';
+  document.getElementById('elementSelector').textContent = elementInfo.selector;
+  document.getElementById('elementText').textContent = elementInfo.textContent;
+  
+  updateStatus(`Selected: ${elementInfo.tagName}${elementInfo.id ? '#' + elementInfo.id : ''}`, true);
+}
 
 function sendMessageToIframe(data) {
   if (targetIframe && targetIframe.contentWindow) {
@@ -302,5 +339,69 @@ window.removeClass = function() {
     action: 'removeClass',
     selector: target,
     value: className
+  });
+}
+
+// Quick action functions for selected element
+window.quickEditText = function() {
+  if (!selectedElementInfo) return;
+  const newText = prompt('Enter new text:', selectedElementInfo.textContent);
+  if (newText !== null) {
+    sendMessageToIframe({
+      action: 'changeText',
+      selector: selectedElementInfo.selector,
+      content: newText
+    });
+  }
+}
+
+window.quickChangeColor = function() {
+  if (!selectedElementInfo) return;
+  const color = prompt('Enter color (e.g., red, #ff0000, rgb(255,0,0)):', 'blue');
+  if (color) {
+    sendMessageToIframe({
+      action: 'changeStyle',
+      selector: selectedElementInfo.selector,
+      property: 'color',
+      value: color
+    });
+  }
+}
+
+window.quickChangeBg = function() {
+  if (!selectedElementInfo) return;
+  const colors = ['#ffeb3b', '#4caf50', '#2196f3', '#ff9800', '#e91e63', '#9c27b0'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  sendMessageToIframe({
+    action: 'changeStyle',
+    selector: selectedElementInfo.selector,
+    property: 'backgroundColor',
+    value: color
+  });
+}
+
+window.quickHide = function() {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'hide',
+    selector: selectedElementInfo.selector
+  });
+}
+
+window.quickHighlight = function() {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'addClass',
+    selector: selectedElementInfo.selector,
+    value: 'highlight'
+  });
+}
+
+window.quickRemoveHighlight = function() {
+  if (!selectedElementInfo) return;
+  sendMessageToIframe({
+    action: 'removeClass',
+    selector: selectedElementInfo.selector,
+    value: 'highlight'
   });
 }
