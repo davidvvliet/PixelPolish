@@ -173,7 +173,7 @@ class PixelPolishMCPServer {
               type: 'object',
               properties: {
                 port: { type: 'number', description: 'Port to serve on', default: 8080 },
-                dist_path: { type: 'string', description: 'Path to dist directory', default: '../mcp_typescript/static_ui' },
+                dist_path: { type: 'string', description: 'Path to dist directory', default: './ui-portal/dist' },
               },
               required: [],
             },
