@@ -9,7 +9,10 @@ document.querySelector('#app').innerHTML = `
 
     <div class="main-content">
       <div class="control-panel">
-        <h2>Control Panel</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2>Control Panel</h2>
+          <button class="action-btn" onclick="submitToMCP()" style="background: #4CAF50; color: white; font-weight: bold;">Submit to MCP</button>
+        </div>
         
         <!-- Quick Actions -->
         <div class="control-section">
@@ -166,16 +169,8 @@ document.querySelector('#app').innerHTML = `
             <div class="form-group">
               <p class="info-text">Changes are automatically saved to browser storage and restored on page refresh.</p>
             </div>
-            <div class="form-group">
-              <label>MCP Server Endpoint:</label>
-              <input type="text" id="mcpEndpoint" placeholder="http://localhost:3000/api/submit" value="http://localhost:3000/api/submit">
-            </div>
             <div class="button-group">
-              <button class="action-btn" onclick="submitToMCP()">Submit to MCP</button>
-              <button class="action-btn" onclick="applySavedState()">Restore Changes</button>
-            </div>
-            <div class="button-group">
-              <button class="action-btn danger" onclick="clearSavedState()">Reset All</button>
+              <button class="action-btn danger" onclick="clearSavedState()">Reset Changes</button>
             </div>
           </div>
         </div>
@@ -725,12 +720,7 @@ window.importState = function() {
 
 // Submit to MCP Server function
 window.submitToMCP = async function() {
-  const endpoint = document.getElementById('mcpEndpoint').value;
-  
-  if (!endpoint.trim()) {
-    updateStatus('Please enter MCP server endpoint', false);
-    return;
-  }
+  const endpoint = 'http://localhost:3000/api/submit'; // Default endpoint
   
   // Prepare the comprehensive payload for LLM processing
   const payload = {
