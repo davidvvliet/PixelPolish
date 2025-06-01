@@ -173,7 +173,7 @@ class PixelPolishMCPServer {
               type: 'object',
               properties: {
                 port: { type: 'number', description: 'Port to serve on', default: 8080 },
-                dist_path: { type: 'string', description: 'Path to dist directory', default: './ui-portal/dist' },
+                dist_path: { type: 'string', description: 'Path to dist directory', default: 'mcp_typescript/ui-portal/dist' },
               },
               required: [],
             },
@@ -196,6 +196,26 @@ class PixelPolishMCPServer {
                 duration_seconds: { type: 'number', description: 'Duration to wait in seconds', default: 50 },
                 message: { type: 'string', description: 'Custom message to display while waiting', default: 'Waiting...' },
               },
+              required: [],
+            },
+          },
+          {
+            name: 'default_serve_vite_app',
+            description: 'Serve the default UI Portal application (mcp_typescript/ui-portal/dist)',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                port: { type: 'number', description: 'Port to serve on', default: 8081 },
+              },
+              required: [],
+            },
+          },
+          {
+            name: 'stop_default_vite_app',
+            description: 'Stop the running default UI Portal HTTP server',
+            inputSchema: {
+              type: 'object',
+              properties: {},
               required: [],
             },
           },
@@ -223,6 +243,10 @@ class PixelPolishMCPServer {
             return await this.handleStopViteApp(args);
           case 'wait':
             return await this.handleWait(args);
+          case 'default_serve_vite_app':
+            return await this.handleDefaultServeViteApp(args);
+          case 'stop_default_vite_app':
+            return await this.handleStopDefaultViteApp(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -388,9 +412,9 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
   }
 
   private async handleServeViteApp(args: any) {
-    const { 
+    const {
       port = 8080,
-      dist_path = '../mcp_typescript/static_ui'
+      dist_path = 'mcp_typescript/ui-portal/dist'
     } = args;
 
     // Check if server is already running
@@ -651,6 +675,280 @@ SPA routing is supported - all routes will serve index.html.
         text: `⏰ Wait completed. Duration: ${duration_seconds} seconds. No API requests received.` 
       }]
     };
+  }
+
+  private async ensurePortIsFree(port: number): Promise<void> {
+    console.error(`Ensuring port ${port} is free...`);
+    let pid: string | null = null;
+    let commandOutput: string = '';
+    let commandError: string = '';
+
+    try {
+      if (process.platform === 'darwin' || process.platform === 'linux') {
+        try {
+            // Attempt to get PID using the port
+            const { stdout, stderr } = await execAsync(`lsof -t -i:${port}`);
+            commandOutput = stdout.trim();
+            commandError = stderr.trim();
+            if (commandOutput) {
+              pid = commandOutput.split('\n')[0]; // Use the first PID if multiple lines
+            }
+        } catch (e: any) {
+            // lsof exits with 1 if no process is found, which execAsync treats as an error.
+            commandOutput = e.stdout?.trim() || ''; // Capture any output despite error
+            commandError = e.stderr?.trim() || '';
+            // We expect an error (exit code 1) if port is free, so don't log it as a failure here.
+            // console.warn(`lsof command for port ${port} resulted in error code ${e.code}. stdout: "${commandOutput}", stderr: "${commandError}"`);
+        }
+      } else if (process.platform === 'win32') {
+        try {
+            // netstat -ano | findstr ":<port>"
+            // Then filter for LISTENING and extract PID
+            const { stdout, stderr } = await execAsync(`netstat -ano | findstr ":${port}"`);
+            commandOutput = stdout.trim();
+            commandError = stderr.trim();
+            const lines = commandOutput.split('\n');
+            for (const line of lines) {
+              if (line.toUpperCase().includes('LISTENING')) {
+                const parts = line.trim().split(/\s+/);
+                const addressPart = parts[1]; // e.g., 0.0.0.0:8081 or [::]:8081
+                if (addressPart && addressPart.endsWith(`:${port}`)) {
+                    const potentialPid = parts[parts.length - 1];
+                    if (potentialPid && !isNaN(parseInt(potentialPid))) {
+                        pid = potentialPid;
+                        break;
+                    }
+                }
+              }
+            }
+        } catch (e: any) {
+            // findstr exits with 1 if no match is found.
+            commandOutput = e.stdout?.trim() || '';
+            commandError = e.stderr?.trim() || '';
+            // console.warn(`netstat/findstr command for port ${port} resulted in error code ${e.code}. stdout: "${commandOutput}", stderr: "${commandError}"`);
+        }
+      }
+
+      if (pid) {
+        console.error(`Port ${port} is in use by PID ${pid}. Attempting to terminate...`);
+        try {
+            if (process.platform === 'darwin' || process.platform === 'linux') {
+              await execAsync(`kill -9 ${pid}`);
+            } else if (process.platform === 'win32') {
+              await execAsync(`taskkill /PID ${pid} /F`);
+            }
+            console.error(`Process ${pid} terminated. Waiting a moment for port to release...`);
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 sec for port to free up
+        } catch (killError: any) {
+            console.error(`Failed to kill process ${pid} on port ${port}: ${killError.message}`);
+        }
+      } else {
+        console.error(`Port ${port} appears to be free or PID not found. Diagnostic output - stdout: "${commandOutput}", stderr: "${commandError}"`);
+      }
+    } catch (error: any) {
+      // Catch unexpected errors from the outer try block of ensurePortIsFree itself
+      console.warn(`An unexpected error occurred in ensurePortIsFree for port ${port}: ${error.message}`);
+    }
+  }
+
+  private async handleDefaultServeViteApp(args: any) {
+    const { port = 8081 } = args; // Only port from args
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const dist_path = join(__dirname, '..', 'ui-portal/dist'); // Corrected path
+    const uiPortalPath = join(__dirname, '..', 'ui-portal'); // Corrected path
+
+    console.error(`[DEBUG] handleDefaultServeViteApp: __dirname: ${__dirname}`);
+    console.error(`[DEBUG] handleDefaultServeViteApp: dist_path: ${dist_path}`);
+    console.error(`[DEBUG] handleDefaultServeViteApp: uiPortalPath: ${uiPortalPath}`);
+
+    await this.ensurePortIsFree(port);
+
+    // Check if server is already running
+    if (this.httpServer) {
+      const serverPort = this.httpServer.address()?.port;
+      return {
+        content: [{
+          type: "text",
+          text: `❌ HTTP server is already running on port ${serverPort}. Use stop_default_vite_app or stop_vite_app to stop it first.`
+        }]
+      };
+    }
+
+    // Check if dist directory exists, if not, try to build it
+    if (!existsSync(dist_path)) {
+      console.error(`Default UI Portal dist directory not found at ${dist_path}. Attempting to build...`);
+      try {
+        console.error(`Executing 'npm run build' in ${uiPortalPath}...`);
+        const { stdout, stderr } = await execAsync('npm run build', { cwd: uiPortalPath });
+        if (stderr && !stderr.includes('WARN')) { // Vite often puts warnings in stderr
+          console.error(`UI Portal build completed with warnings/errors: ${stderr}`);
+        }
+        console.error(`UI Portal build successful. stdout: ${stdout}`);
+      } catch (buildError: any) {
+        console.error('UI Portal build failed:', buildError);
+        throw new McpError(
+          ErrorCode.InternalError,
+          `UI Portal build failed. Please check the logs.
+Stdout:
+${buildError.stdout}
+Stderr:
+${buildError.stderr}`
+        );
+      }
+    }
+
+    // Re-check if dist directory exists after attempting build
+    if (!existsSync(dist_path)) {
+      throw new McpError(
+        ErrorCode.InternalError, // Changed from InvalidParams as build was attempted
+        `Default UI Portal dist directory still not found after build attempt: ${dist_path}.`
+      );
+    }
+
+    // Check if index.html exists
+    const indexPath = join(dist_path, 'index.html');
+    if (!existsSync(indexPath)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `index.html not found in default UI Portal dist: ${dist_path}. Make sure the build is complete.`
+      );
+    }
+
+    try {
+      console.error(`🚀 Starting HTTP server for Default UI Portal at: ${dist_path}`);
+
+      // Create HTTP server
+      this.httpServer = createServer(async (req, res) => {
+        // Add CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+        // Handle preflight requests
+        if (req.method === 'OPTIONS') {
+          res.writeHead(200);
+          res.end();
+          return;
+        }
+
+        // Handle API submit endpoint
+        if (req.url === '/api/submit' && req.method === 'POST') {
+          try {
+            const postData = await this.parsePostData(req);
+            const apiRequest: ApiRequest = {
+              timestamp: Date.now(),
+              data: postData,
+              headers: req.headers
+            };
+            this.apiRequests.push(apiRequest);
+            console.error(`📨 API request received: ${JSON.stringify(postData)}`);
+            res.setHeader('Content-Type', 'application/json');
+            res.writeHead(200);
+            res.end(JSON.stringify({
+              success: true,
+              message: 'Request received and queued',
+              timestamp: apiRequest.timestamp
+            }));
+            return;
+          } catch (error) {
+            console.error('API submit error:', error);
+            res.setHeader('Content-Type', 'application/json');
+            res.writeHead(400);
+            res.end(JSON.stringify({
+              success: false,
+              error: 'Invalid JSON or request error'
+            }));
+            return;
+          }
+        }
+
+        let filePath = req.url === '/' ? '/index.html' : req.url || '/index.html';
+        filePath = filePath.split('?')[0];
+        if (filePath.includes('..')) {
+          res.writeHead(403);
+          res.end('Forbidden');
+          return;
+        }
+
+        const fullPath = join(dist_path, filePath);
+
+        try {
+          if (existsSync(fullPath)) {
+            const content = readFileSync(fullPath);
+            const contentType = this.getContentType(fullPath);
+            res.setHeader('Content-Type', contentType);
+            res.writeHead(200);
+            res.end(content);
+          } else {
+            const indexContent = readFileSync(indexPath);
+            res.setHeader('Content-Type', 'text/html');
+            res.writeHead(200);
+            res.end(indexContent);
+          }
+        } catch (fileError) {
+          console.error('File read error:', fileError);
+          res.writeHead(500);
+          res.end('Internal Server Error');
+        }
+      });
+
+      // Start listening
+      await new Promise<void>((resolve, reject) => {
+        this.httpServer!.listen(port, (err: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+
+      const serverUrl = `http://localhost:${port}`;
+      console.error(`✅ Default UI Portal Server started at ${serverUrl}`);
+
+      // Automatically open the URL
+      try {
+        console.error(`🌐 Opening ${serverUrl} in your default browser...`);
+        let openCommand = '';
+        if (process.platform === 'darwin') openCommand = `open "${serverUrl}"`;
+        else if (process.platform === 'win32') openCommand = `start "${serverUrl}"`;
+        else openCommand = `xdg-open "${serverUrl}"`;
+        await execAsync(openCommand);
+        console.error(`✅ Browser opened successfully`);
+      } catch (browserError) {
+        console.error(`⚠️ Could not automatically open browser: ${browserError}`);
+        console.error(`Please manually open: ${serverUrl}`);
+      }
+
+      const resultText = `✅ Default UI Portal is now serving and opened in your browser!
+🌐 **Server URL:** ${serverUrl}
+📁 **Serving from:** ${dist_path} (Fixed Path)
+⚡ **Port:** ${port}
+📄 **Index file:** ${indexPath}
+🚀 **Browser:** Automatically opened ${serverUrl}
+
+The Default UI Portal application is now accessible.
+Use \`stop_default_vite_app\` tool to stop the server.`;
+
+      return { content: [{ type: "text", text: resultText }] };
+
+    } catch (error) {
+      if (this.httpServer) {
+        this.httpServer.close();
+        this.httpServer = null;
+      }
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to start Default UI Portal HTTP server: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  private async handleStopDefaultViteApp(args: any) {
+    // This can simply call the existing stop handler as it operates on the same httpServer instance
+    console.error('Attempting to stop server via handleStopDefaultViteApp, calling handleStopViteApp...');
+    return await this.handleStopViteApp(args);
   }
 
   async run(): Promise<void> {
