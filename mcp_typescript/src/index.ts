@@ -25,6 +25,13 @@ import { createServer } from 'http';
 import { readFileSync, existsSync } from 'fs';
 import { extname } from 'path';
 
+// Shared state for API requests
+interface ApiRequest {
+  timestamp: number;
+  data: any;
+  headers: any;
+}
+
 class PixelPolishMCPServer {
   private server: Server;
   private domCapture: DOMCaptureService;
@@ -33,6 +40,7 @@ class PixelPolishMCPServer {
   private screenshotService: ScreenshotService;
   private aiAnalyzer: AIAnalyzer;
   private httpServer: any = null;
+  private apiRequests: ApiRequest[] = []; // Queue for incoming API requests
 
   constructor() {
     this.server = new Server(
@@ -82,6 +90,24 @@ class PixelPolishMCPServer {
       '.eot': 'application/vnd.ms-fontobject'
     };
     return contentTypes[ext] || 'application/octet-stream';
+  }
+
+  private parsePostData(req: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let body = '';
+      req.on('data', (chunk: any) => {
+        body += chunk.toString();
+      });
+      req.on('end', () => {
+        try {
+          const data = body ? JSON.parse(body) : {};
+          resolve(data);
+        } catch (error) {
+          reject(new Error('Invalid JSON'));
+        }
+      });
+      req.on('error', reject);
+    });
   }
 
   private setupToolHandlers(): void {
@@ -157,6 +183,18 @@ class PixelPolishMCPServer {
               required: [],
             },
           },
+          {
+            name: 'wait',
+            description: 'Artificial wait tool that pauses execution for a specified duration',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                duration_seconds: { type: 'number', description: 'Duration to wait in seconds', default: 50 },
+                message: { type: 'string', description: 'Custom message to display while waiting', default: 'Waiting...' },
+              },
+              required: [],
+            },
+          },
         ],
       };
     });
@@ -179,6 +217,8 @@ class PixelPolishMCPServer {
             return await this.handleServeViteApp(args);
           case 'stop_vite_app':
             return await this.handleStopViteApp(args);
+          case 'wait':
+            return await this.handleWait(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -381,7 +421,7 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
       console.error(`🚀 Starting HTTP server for UI Portal at: ${dist_path}`);
 
       // Create HTTP server
-      this.httpServer = createServer((req, res) => {
+      this.httpServer = createServer(async (req, res) => {
         // Add CORS headers
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -392,6 +432,42 @@ ${analysis.issues.slice(0, 5).map((issue, i) =>
           res.writeHead(200);
           res.end();
           return;
+        }
+
+        // Handle API submit endpoint
+        if (req.url === '/api/submit' && req.method === 'POST') {
+          try {
+            const postData = await this.parsePostData(req);
+            
+            // Store the request in our queue
+            const apiRequest: ApiRequest = {
+              timestamp: Date.now(),
+              data: postData,
+              headers: req.headers
+            };
+            
+            this.apiRequests.push(apiRequest);
+            console.error(`📨 API request received: ${JSON.stringify(postData)}`);
+            
+            // Respond to the API call
+            res.setHeader('Content-Type', 'application/json');
+            res.writeHead(200);
+            res.end(JSON.stringify({ 
+              success: true, 
+              message: 'Request received and queued',
+              timestamp: apiRequest.timestamp 
+            }));
+            return;
+          } catch (error) {
+            console.error('API submit error:', error);
+            res.setHeader('Content-Type', 'application/json');
+            res.writeHead(400);
+            res.end(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid JSON or request error' 
+            }));
+            return;
+          }
         }
 
         let filePath = req.url === '/' ? '/index.html' : req.url || '/index.html';
@@ -507,6 +583,46 @@ SPA routing is supported - all routes will serve index.html.
         `Failed to stop HTTP server: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  private async handleWait(args: any) {
+    const { duration_seconds = 5, message = 'Waiting...' } = args;
+
+    console.error(`🕒 ${message} (checking for API requests for ${duration_seconds} seconds)`);
+    
+    // Clear any old requests before starting the wait
+    this.apiRequests = [];
+    
+    const startTime = Date.now();
+    const timeoutMs = duration_seconds * 1000;
+    
+    // Poll for API requests during the wait period
+    while (Date.now() - startTime < timeoutMs) {
+      // Check if any API requests have come in
+      if (this.apiRequests.length > 0) {
+        const request = this.apiRequests.shift(); // Get the first request
+        console.error(`📨 API request found during wait period!`);
+        
+        return {
+          content: [{ 
+            type: "text", 
+            text: `✅ API request received during wait period!\n\n**Request Data:**\n\`\`\`json\n${JSON.stringify(request.data, null, 2)}\n\`\`\`\n\n**Timestamp:** ${new Date(request.timestamp).toISOString()}\n**Wait Duration:** ${Math.round((Date.now() - startTime) / 1000)} seconds` 
+          }],
+          apiRequest: request // Include the raw request data for programmatic access
+        };
+      }
+      
+      // Wait 100ms before checking again
+      await new Promise<void>(resolve => setTimeout(resolve, 100));
+    }
+
+    // No API requests received within timeout
+    return {
+      content: [{ 
+        type: "text", 
+        text: `⏰ Wait completed. Duration: ${duration_seconds} seconds. No API requests received.` 
+      }]
+    };
   }
 
   async run(): Promise<void> {

@@ -27,18 +27,19 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "@google/generative-ai": "^0.24.1",
     "@modelcontextprotocol/sdk": "^0.5.0",
+    "cheerio": "^1.0.0-rc.12",
+    "chokidar": "^3.5.3",
+    "css-tree": "^2.3.1",
+    "dotenv": "^16.0.0",
+    "http-server": "^14.1.1",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.20.0",
     "playwright": "^1.45.0",
     "puppeteer": "^24.9.0",
-    "openai": "^4.20.0",
-    "@anthropic-ai/sdk": "^0.27.0",
-    "node-fetch": "^3.3.2",
-    "sharp": "^0.33.0",
-    "cheerio": "^1.0.0-rc.12",
-    "css-tree": "^2.3.1",
-    "chokidar": "^3.5.3",
-    "http-server": "^14.1.1",
-    "dotenv": "^16.0.0"
+    "sharp": "^0.33.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -48,4 +49,4 @@
   "engines": {
     "node": ">=18.0.0"
   }
-} 
+}
