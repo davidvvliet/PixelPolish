@@ -1,12 +1,19 @@
 <div align="center">
-  <img src="ui-portal/public/pixelpolish-logo.webp" alt="PixelPolish Logo" width="200" />
+  <img src="ui-portal/pixelpolish-logo.webp" alt="PixelPolish Logo" width="200" />
 </div>
 
 # PixelPolish - AI-Powered Web Interface Manipulation Platform
+![](./pixelpolish-ui.png)
 
 **Professional DOM manipulation and analysis tools with natural language AI integration**
 
 PixelPolish is a comprehensive web development platform that combines real-time DOM manipulation with AI-powered natural language processing. The system enables users to modify web interfaces through both direct interaction and conversational AI commands, while providing detailed analysis and change tracking capabilities.
+
+## Demo Video
+
+Watch PixelPolish in action: **[View Demo on YouTube](https://youtu.be/ZILun1Yp5as)**
+
+See how to manipulate web interfaces using natural language commands and real-time DOM editing capabilities.
 
 ## Core Features
 
