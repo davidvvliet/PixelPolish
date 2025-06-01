@@ -1,17 +1,12 @@
 import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
+import pixelPolishLogo from '/pixelpolish-logo.webp'
 
 document.querySelector('#app').innerHTML = `
   <div>
     <div class="header">
-      <a href="https://vite.dev" target="_blank">
-        <img src="${viteLogo}" class="logo" alt="Vite logo" />
+      <a href="#" target="_blank">
+        <img src="${pixelPolishLogo}" class="logo pixelpolish" alt="PixelPolish logo" />
       </a>
-      <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-        <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-      </a>
-      <h1>DOM Manipulation Portal</h1>
     </div>
 
     <div class="main-content">
